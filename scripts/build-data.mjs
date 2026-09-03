@@ -58,7 +58,7 @@ await mkdir(path.join(outputRoot, "assets", "portraits"), { recursive: true });
 
 for (const config of GAME_CONFIGS) {
   const names = parseNameMap(await readFile(config.gameData, "utf8"));
-  if (!names.has("プレイヤー")) names.set("プレイヤー", config.id === "awakening" ? "루프레" : "카무이");
+  if (!names.has("プレイヤー")) names.set("プレイヤー", config.id === "awakening" ? "러플레" : "카무이");
   const main = await buildMainMode(config, names);
   const dlc = await buildDlcMode(config, names);
   index.games.push({
@@ -78,7 +78,15 @@ console.log(`Generated ${conversationTotal} conversations and ${characterTotal} 
 
 async function copySiteShell() {
   if (outputRoot === projectRoot) return;
-  const files = ["index.html", "assets/app.js", "assets/styles.css", "assets/logo.png"];
+  const files = [
+    "index.html",
+    "assets/app.js",
+    "assets/styles.css",
+    "assets/logo.png",
+    "assets/awakening-keyart.png",
+    "assets/fates-birthright-logo.webp",
+    "assets/fates-conquest-logo.webp",
+  ];
   for (const relativePath of files) {
     const destination = path.join(outputRoot, relativePath);
     await mkdir(path.dirname(destination), { recursive: true });
@@ -141,7 +149,7 @@ function toArchiveEntry(entry, label, gameId) {
     label,
     segments: parsed.segments,
     unknownCommands: parsed.unknownCommands,
-    defaultPlayerName: gameId === "awakening" ? "루프레" : "카무이",
+    defaultPlayerName: gameId === "awakening" ? "러플레" : "카무이",
   };
 }
 
@@ -215,7 +223,7 @@ async function copyPortrait(config, rawId) {
 }
 
 function displayName(id, names, gameId) {
-  if (id === "プレイヤー") return gameId === "awakening" ? "루프레" : "카무이";
+  if (id === "プレイヤー") return gameId === "awakening" ? "러플레" : "카무이";
   return names.get(id)?.trim() || id;
 }
 

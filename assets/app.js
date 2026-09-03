@@ -86,6 +86,7 @@ app.addEventListener("change", (event) => {
 app.addEventListener("error", (event) => {
   if (event.target instanceof HTMLImageElement && event.target.classList.contains("portrait-image")) {
     event.target.hidden = true;
+    event.target.closest(".portrait")?.classList.add("portrait--empty");
   }
 }, true);
 
@@ -135,6 +136,7 @@ async function loadSelectedConversation() {
 }
 
 function render() {
+  document.body.dataset.game = state.gameId || "landing";
   if (state.error && !state.archive) {
     app.innerHTML = errorScreen();
     return;
@@ -147,28 +149,46 @@ function render() {
 }
 
 function landingScreen() {
-  const games = state.archive.games.map((game) => {
-    const conversationCount = Object.values(game.modes).reduce((sum, mode) => sum + mode.conversations.length, 0);
-    const characterCount = new Set(Object.values(game.modes).flatMap((mode) => mode.characters.map((character) => character.id))).size;
-    return `
-      <button class="game-card game-card--${game.id}" data-action="choose-game" data-game="${game.id}">
-        <span class="game-number">${game.id === "awakening" ? "I" : "II"}</span>
-        <span class="game-card-copy">
-          <strong>${escapeHtml(game.shortLabel)}</strong>
-          <small>${characterCount.toLocaleString("ko-KR")}명 · ${conversationCount.toLocaleString("ko-KR")}개 회화</small>
-        </span>
-        <span class="card-arrow" aria-hidden="true">→</span>
-      </button>`;
-  }).join("");
+  const awakening = state.archive.games.find((game) => game.id === "awakening");
+  const fates = state.archive.games.find((game) => game.id === "fates");
+  const awakeningStats = gameStats(awakening);
+  const fatesStats = gameStats(fates);
   return `
     <main class="landing">
-      <div class="landing-emblem" aria-hidden="true">✦</div>
-      <img class="brand-logo" src="./assets/logo.png" alt="파이어 엠블렘 지원회화" />
-      <p class="eyebrow">한국어 지원회화 아카이브</p>
-      <h1>어느 이야기부터 펼쳐 볼까요?</h1>
-      <div class="game-grid">${games}</div>
+      <div class="brand-plaque">
+        <img class="brand-logo" src="./assets/logo.png" alt="파이어 엠블렘 지원회화" />
+        <p class="eyebrow">한국어 지원회화 아카이브</p>
+      </div>
+      <h1>기록을 펼칠 세계를 선택하세요</h1>
+      <div class="game-grid">
+        <button class="game-card game-card--awakening" data-action="choose-game" data-game="awakening">
+          <span class="game-art game-art--awakening" aria-hidden="true"><img src="./assets/awakening-keyart.png" alt="" /></span>
+          <span class="game-card-copy">
+            <small>THE FIRST RECORD</small>
+            <strong>각성</strong>
+            <em>${awakeningStats}</em>
+          </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
+        </button>
+        <button class="game-card game-card--fates" data-action="choose-game" data-game="fates">
+          <span class="fates-side fates-side--birthright" aria-hidden="true"><img src="./assets/fates-birthright-logo.webp" alt="" /></span>
+          <span class="fates-side fates-side--conquest" aria-hidden="true"><img src="./assets/fates-conquest-logo.webp" alt="" /></span>
+          <span class="game-card-copy game-card-copy--fates">
+            <small>CHOOSE YOUR FATE</small>
+            <strong>if</strong>
+            <em>${fatesStats}</em>
+          </span>
+          <span class="card-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
       <p class="source-note">팬 번역 데이터를 바탕으로 만든 비공식 감상용 아카이브입니다.</p>
     </main>`;
+}
+
+function gameStats(game) {
+  const conversationCount = Object.values(game.modes).reduce((sum, mode) => sum + mode.conversations.length, 0);
+  const characterCount = new Set(Object.values(game.modes).flatMap((mode) => mode.characters.map((character) => character.id))).size;
+  return `${characterCount.toLocaleString("ko-KR")}명 · ${conversationCount.toLocaleString("ko-KR")}개 회화`;
 }
 
 function modeScreen() {
@@ -323,7 +343,7 @@ function segmentMarkup(entry) {
     const name = currentGame().names[segment.speaker] || (segment.speaker === "プレイヤー" ? (state.playerName || defaultPlayerName()) : segment.speaker);
     return `
       <article class="speech ${character ? "" : "speech--narration"}">
-        <div class="speaker-portrait">${character ? portraitMarkup(character) : `<span class="portrait"><span class="portrait-fallback">${escapeHtml(initials(name))}</span></span>`}</div>
+        <div class="speaker-portrait">${character ? portraitMarkup(character) : '<span class="portrait portrait--empty" aria-hidden="true"></span>'}</div>
         <div class="speech-body">
           <div class="speaker-line"><strong>${escapeHtml(name)}</strong>${segment.emotion && segment.emotion !== "通常" ? `<small>${escapeHtml(segment.emotion)}</small>` : ""}</div>
           <p>${escapeHtml(personalize(segment.text)).replaceAll("\n", "<br />")}</p>
@@ -348,7 +368,7 @@ function renderCharacterLists(slot) {
 }
 
 function portraitMarkup(character, large = false) {
-  return `<span class="portrait ${large ? "portrait--large" : ""}"><span class="portrait-fallback">${escapeHtml(initials(character.name))}</span>${character.portrait ? `<img class="portrait-image" src="${escapeHtml(character.portrait)}" alt="" loading="lazy" />` : ""}</span>`;
+  return `<span class="portrait ${large ? "portrait--large" : ""} ${character.portrait ? "" : "portrait--empty"}" aria-hidden="true">${character.portrait ? `<img class="portrait-image" src="${escapeHtml(character.portrait)}" alt="" loading="lazy" />` : ""}</span>`;
 }
 
 function personalize(text) {
@@ -368,8 +388,7 @@ function partnerCharacters(character) {
 function pairConversations(firstId, secondId) {
   return currentMode().conversations.filter((conversation) => conversation.characters.includes(firstId) && conversation.characters.includes(secondId));
 }
-function defaultPlayerName() { return state.gameId === "awakening" ? "루프레" : "카무이"; }
-function initials(name) { return [...String(name || "?")].slice(0, 2).join(""); }
+function defaultPlayerName() { return state.gameId === "awakening" ? "러플레" : "카무이"; }
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>'"]/gu, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[character]);
 }
