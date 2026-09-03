@@ -25,6 +25,18 @@ for (const game of index.games) {
       }
       if (character.portrait) {
         portraitCount += 1;
+        const hairPath = path.join(root, "assets/renderers", game.id, "img/hair", `${character.id}_bu_髪0.png`);
+        if (await isFile(hairPath)) {
+          if (!character.portrait.endsWith(".svg")) {
+            problems.push(`${game.id}/${character.id}: 선택용 초상화 머리카락 합성 누락`);
+          } else {
+            const composed = await readFile(path.join(root, character.portrait), "utf8");
+            const hairData = (await readFile(hairPath)).toString("base64");
+            if (!composed.includes(hairData) || (composed.match(/<image /g) || []).length !== 2) {
+              problems.push(`${game.id}/${character.id}: 합성 초상화의 머리카락 레이어 누락`);
+            }
+          }
+        }
         if (!(await isFile(path.join(root, character.portrait.replace(/^\.\//u, ""))))) {
           problems.push(`${game.id}/${mode.id}: 초상화 파일 누락 ${character.portrait}`);
         }

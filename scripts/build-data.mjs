@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { composePortraitSvg } from "./lib/portrait.mjs";
 import {
   canonicalCharacterId,
   extractDlcSupportKey,
@@ -222,8 +223,15 @@ async function copyPortrait(config, rawId) {
   for (const candidate of candidates) {
     const source = path.join(config.portraitDir, candidate);
     if (!(await exists(source))) continue;
-    const fileName = `${config.id}-${createHash("sha1").update(id).digest("hex").slice(0, 12)}.png`;
-    await copyFile(source, path.join(outputRoot, "assets", "portraits", fileName));
+    const hairPath = path.join(config.portraitDir, "..", "hair", candidate.replace("_bu_通常.png", "_bu_髪0.png"));
+    const hasHair = await exists(hairPath);
+    const fileName = `${config.id}-${createHash("sha1").update(id).digest("hex").slice(0, 12)}.${hasHair ? "svg" : "png"}`;
+    const destination = path.join(outputRoot, "assets", "portraits", fileName);
+    if (hasHair) {
+      await writeFile(destination, composePortraitSvg(await readFile(source), await readFile(hairPath)), "utf8");
+    } else {
+      await copyFile(source, destination);
+    }
     return `./assets/portraits/${fileName}`;
   }
   return null;

@@ -88,7 +88,7 @@ body[data-game="fates"] .site-header { background: linear-gradient(110deg, rgba(
 .mode-card small { color: var(--muted); font-size: .9rem; line-height: 1.5; }
 .mode-card em { color: var(--accent); font-size: .82rem; font-style: normal; }
 .mode-ornament { display: grid; place-items: center; width: 3rem; aspect-ratio: 1; border: 1px solid rgba(208,180,119,.46); color: var(--gold); }
-body[data-game="fates"] .mode-card:first-child { background: linear-gradient(132deg, #f5f2ea 0 36%, #17181d 36.3%); }
+body[data-game="fates"] .mode-card:first-child { --muted: #505158; --accent: #64353f; color: #25262b; background: #f0eee8; }
 body[data-game="fates"] .mode-card:first-child .mode-ornament { color: #821524; border-color: #821524; }
 
 .archive-intro { position: relative; display: flex; align-items: end; justify-content: space-between; gap: 2rem; width: min(82rem, calc(100% - 2rem)); margin: 2.5rem auto 1.6rem; padding: 1.15rem 1.25rem; border-left: 3px solid var(--gold); background: rgba(5, 13, 27, .72); backdrop-filter: blur(14px); }
@@ -144,9 +144,9 @@ body[data-game="fates"] .picker-column:last-child { border-top: 3px solid #8b68a
 .conversation-card em { margin-left: auto; color: var(--muted); font-size: .8rem; font-style: normal; }
 .card-arrow { margin-left: auto; color: var(--accent); font-size: 1.3rem; }
 .reader { scroll-margin-top: 1rem; }
-.game-player { max-width: 54rem; margin: 0 auto; padding: 1.5rem; }
+.game-player { max-width: 35rem; margin: 0 auto; padding: 1.5rem; }
 .game-screen { display: block; width: 100%; padding: 0; border: 1px solid var(--gold); background: #05080d; cursor: pointer; box-shadow: 0 12px 35px #0008; }
-.game-screen canvas { display: block; width: 100%; height: auto; aspect-ratio: 5 / 3; image-rendering: pixelated; }
+.game-screen canvas { display: block; width: 100%; height: auto; aspect-ratio: 5 / 3; image-rendering: auto; }
 .playback-controls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; }
 .playback-controls button { min-height: 2.75rem; padding: .55rem 1.2rem; border: 1px solid var(--line); background: var(--navy); cursor: pointer; }
 .playback-controls button:disabled { opacity: .35; cursor: default; }
@@ -158,8 +158,7 @@ body[data-game="fates"] .picker-column:last-child { border-top: 3px solid #8b68a
 .screen-reader-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .archive-shell footer a { color: var(--muted); }
 .reader-header { display: flex; align-items: end; justify-content: space-between; gap: 1.5rem; padding: 1.3rem; border-bottom: 1px solid var(--line); background: linear-gradient(90deg, #18375d, #09162b); }
-body[data-game="fates"] .reader-header { background: linear-gradient(110deg, #ece9e1 0 25%, #17151b 25.2%); }
-body[data-game="fates"] .reader-header > div:first-child { padding-left: clamp(0rem, 24vw, 13rem); }
+body[data-game="fates"] .reader-header { border-left: 4px solid #e4e1d9; background: #222126; }
 .reader-header .eyebrow { margin-top: 0; }
 .reader-header h2 { margin: 0; font-family: Cambria, "Noto Serif KR", serif; font-size: 1.4rem; }
 .reader-header small { color: var(--muted); font-size: .8rem; }
@@ -180,6 +179,34 @@ body[data-game="fates"] .speech:nth-child(even) .speech-body { border-left-color
 .reader-loading, .inline-error { width: min(82rem, calc(100% - 2rem)); margin: 1rem auto; padding: 1rem; border: 1px solid var(--line); background: var(--panel); text-align: center; }
 .inline-error { color: var(--danger); }
 .archive-shell footer { padding: 2.5rem 1rem; color: var(--muted); font-size: .8rem; text-align: center; }
+
+/* Keep the black/white split outside reading surfaces; each surface owns its contrast. */
+body[data-game="fates"] {
+  --ink: #f1f0ee;
+  --muted: #c2bfc6;
+  --silver: #e0dde2;
+  --navy: #242329;
+  --accent: #e0d1ea;
+}
+body[data-game="fates"] .mode-card:not(:first-child),
+body[data-game="fates"] .conversation-card { background: #25242a; }
+body[data-game="fates"] .conversation-card:hover,
+body[data-game="fates"] .mode-card:hover { border-color: #a69da9; }
+body[data-game="fates"] .archive-intro,
+body[data-game="fates"] .profile-controls,
+body[data-game="fates"] .picker-column.is-disabled { background: #1c1b20; }
+body[data-game="fates"] .profile-controls input[type="text"],
+body[data-game="fates"] .search-box input,
+body[data-game="fates"] .rank-tab { background: #111115; }
+body[data-game="fates"] .rank-tab.is-active { background: #443c49; color: #fff2d1; }
+body[data-game="fates"] .character-card { background: #141418; }
+body[data-game="fates"] .character-card:hover { background: #333039; border-color: #a69da9; }
+body[data-game="fates"] .character-grid { scrollbar-color: #817687 #141418; }
+body[data-game="fates"] .portrait { background: radial-gradient(circle at 45% 35%, #45414c, #141418 72%); border-color: #756d7c; }
+body[data-game="fates"] .speech-body,
+body[data-game="fates"] .speech--narration .speech-body { background: #28252d; }
+body[data-game="fates"] .header-context { padding: .4rem .6rem; background: #17161b; }
+body[data-game="fates"] .archive-shell footer { margin-top: 1rem; background: #17161b; }
 
 @media (max-width: 900px) {
   .character-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
