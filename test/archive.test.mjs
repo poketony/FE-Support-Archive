@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { isAllowedArchivePair, isAllowedPlayerVariant } from "../scripts/lib/parser.mjs";
+import { isAllowedArchivePair, isAllowedArchiveSource, isAllowedPlayerVariant, extractMainSupportKey, extractDlcSupportKey, relationshipLabel } from "../scripts/lib/parser.mjs";
 import { characterName, visibleText } from "../assets/display.js";
 import { selectDlcContent } from "../assets/archive-navigation.js";
 
@@ -22,6 +22,40 @@ test("excludes Father and the old Awakening Lucina without excluding Marth's ent
   assert.equal(isAllowedArchivePair(["マルス", "クロム"], "awakening"), true);
   assert.equal(isAllowedArchivePair(["ルキナ", "アクア"], "fates"), true);
   assert.equal(characterName("マルス", { マルス: "루키나" }), "루키나");
+});
+
+test("excludes obsolete source filenames even when their MID refers to Marth", () => {
+  assert.equal(isAllowedArchiveSource("デジェル_ルキナ.txt", "awakening"), false);
+  assert.equal(isAllowedArchiveSource("セレナ_父親_親子.txt", "awakening"), false);
+  assert.equal(isAllowedArchiveSource("ロラン_父親_親子.txt", "awakening"), false);
+  assert.equal(isAllowedArchiveSource("デジェル_マルス.txt", "awakening"), true);
+  assert.equal(isAllowedArchiveSource("マルス_デジェル_兄弟.txt", "awakening"), true);
+  assert.equal(isAllowedArchiveSource("ルキナ.txt", "fates"), true);
+});
+
+test("keeps main support relationship markers separate from ranks", () => {
+  const general = extractMainSupportKey("MID_支援_デジェル_マルス_Ｃ");
+  const siblings = extractMainSupportKey("MID_支援_マルス_デジェル_兄弟_Ｃ");
+  const family = extractMainSupportKey("MID_支援_マーク女_マルス_親子_Ａ");
+  assert.equal(general.relationship, "일반");
+  assert.equal(siblings.relationship, "가족 · 형제·자매");
+  assert.equal(family.relationship, "가족 · 부모·자녀");
+  assert.deepEqual(family.characters, ["マーク女", "マルス"]);
+  assert.equal(family.rank, "Ａ");
+});
+
+test("retains DLC lover/family branches and sequence separately from voice variant", () => {
+  const names = new Map([["クロム", "크롬"], ["プレイヤー", "러플레"]]);
+  const general = extractDlcSupportKey("MID_E033_TK_クロム_プレイヤー女_1_PCF2", names);
+  const lover = extractDlcSupportKey("MID_E033_TK_クロム_プレイヤー恋人_2_PCF2", names);
+  const family = extractDlcSupportKey("MID_E000_EV_クロム_プレイヤー親子_PCM1", names);
+  assert.deepEqual(general.characters, lover.characters);
+  assert.equal(general.relationship, "일반");
+  assert.equal(lover.relationship, "연인");
+  assert.equal(lover.variant, "여성 · 2편");
+  assert.equal(family.relationship, "가족 · 부모·자녀");
+  assert.equal(family.variant, "남성");
+  assert.equal(relationshipLabel("MID_支援_父親_クロム_Ｃ"), "일반");
 });
 
 test("display names and untranslated text never leak Japanese", () => {

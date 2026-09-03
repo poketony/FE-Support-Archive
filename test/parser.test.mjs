@@ -13,13 +13,15 @@ test("extracts main support pair and rank", () => {
   assert.deepEqual(extractMainSupportKey("MID_支援_クロム_スミア_Ｃ", names), {
     characters: ["クロム", "スミア"],
     rank: "Ｃ",
+    relationship: "일반",
   });
 });
 
 test("extracts DLC pair while ignoring variant suffixes", () => {
   assert.deepEqual(extractDlcSupportKey("MID_E033_TK_アクア_サクラ_PCF2", names), {
     characters: ["アクア", "サクラ"],
-    variant: "여성 2",
+    variant: "여성",
+    relationship: "일반",
   });
 });
 

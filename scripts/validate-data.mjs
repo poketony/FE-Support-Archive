@@ -1,6 +1,6 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
-import { isAllowedArchivePair, isAllowedPlayerVariant } from "./lib/parser.mjs";
+import { isAllowedArchivePair, isAllowedArchiveSource, isAllowedPlayerVariant, relationshipLabel } from "./lib/parser.mjs";
 import { visibleText } from "../assets/display.js";
 
 const args = parseArgs(process.argv.slice(2));
@@ -14,6 +14,7 @@ let portraitCount = 0;
 const modeSummary = [];
 
 for (const game of index.games) {
+  const mainKeys = new Set();
   for (const mode of Object.values(game.modes)) {
     const ids = new Set(mode.characters.map((character) => character.id));
     if (!mode.characters.length) problems.push(`${game.id}/${mode.id}: 캐릭터가 없습니다.`);
@@ -69,8 +70,16 @@ for (const game of index.games) {
         continue;
       }
       const conversation = JSON.parse(await readFile(filePath, "utf8"));
+      if (!isAllowedArchiveSource(conversation.sourceFile, game.id)) problems.push(`${metadata.id}: 제외 대상 원본 파일 노출`);
+      if (!metadata.relationship || metadata.relationship !== conversation.relationship) problems.push(`${metadata.id}: 관계 구분 누락`);
+      if (new Set(metadata.entryLabels).size !== metadata.entryLabels.length) problems.push(`${metadata.id}: 구별할 수 없는 구간 이름`);
       if (!conversation.entries.length) problems.push(`${game.id}/${mode.id}/${metadata.id}: 빈 회화`);
       for (const entry of conversation.entries) {
+        if (game.id === "awakening" && mode.id === "main") {
+          if (mainKeys.has(entry.key)) problems.push(`${metadata.id}: 각성 MID 중복`);
+          mainKeys.add(entry.key);
+        }
+        if (relationshipLabel(entry.key) !== conversation.relationship) problems.push(`${metadata.id}: 다른 관계의 회화 혼합`);
         if (!isAllowedPlayerVariant(entry.key, game.id)) problems.push(`${metadata.id}: 제외 대상 주인공 변형`);
         entryCount += 1;
         if (!entry.script?.trim()) problems.push(`${game.id}/${metadata.id}/${entry.key}: 렌더링 스크립트 없음`);

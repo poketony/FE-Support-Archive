@@ -13,6 +13,7 @@ import {
   parseScript,
   isAllowedPlayerVariant,
   isAllowedArchivePair,
+  isAllowedArchiveSource,
 } from "./lib/parser.mjs";
 
 const args = parseArgs(process.argv.slice(2));
@@ -25,7 +26,7 @@ const awakeningAssets = path.join(sourceRoot, "Awakening", "Awakening-Live-Rende
 const DLC_CONTENT = {
   "인연의 여름": { id: "summer", image: "./assets/dlc-summer.png" },
   "인연의 비밀 온천": { id: "hot-spring", image: "./assets/dlc-hot-spring.png" },
-  "인연의 수확제": { id: "harvest", image: null },
+  "인연의 수확제": { id: "harvest", image: "./assets/dlc-harvest.png" },
   "인연의 백야제": { id: "hoshido", image: "./assets/dlc-hoshido.png" },
   "인연의 암야제": { id: "nohr", image: "./assets/dlc-nohr.png" },
 };
@@ -107,6 +108,9 @@ async function copySiteShell() {
     "assets/dlc-hot-spring.png",
     "assets/dlc-hoshido.png",
     "assets/dlc-nohr.png",
+    "assets/dlc-harvest.png",
+    "assets/awakening-box.png",
+    "assets/fates-box.jpg",
     "assets/game-renderer.js",
     "assets/renderer-format.js",
     "LICENSE.txt",
@@ -131,20 +135,21 @@ async function buildMainMode(config, names) {
   const conversations = [];
 
   for (const fileName of files) {
+    if (!isAllowedArchiveSource(fileName, config.id)) continue;
     const filePath = path.join(config.mainDir, fileName);
     const entries = parseMessageDocument(await readFile(filePath, "utf8"));
-    const supportEntries = [];
-    let pair = null;
+    const groups = new Map();
     for (const entry of entries) {
       const parsedKey = extractMainSupportKey(entry.key, names);
       if (!parsedKey || !entry.value.trim() || !isAllowedPlayerVariant(entry.key, config.id)) continue;
       if (!isAllowedArchivePair(parsedKey.characters, config.id)) continue;
-      pair ??= parsedKey.characters;
-      if (pair.join("\0") !== parsedKey.characters.join("\0")) continue;
-      supportEntries.push(toArchiveEntry(entry, parsedKey.rank, config.id));
+      const groupKey = [...parsedKey.characters, parsedKey.relationship].join("\0");
+      if (!groups.has(groupKey)) groups.set(groupKey, { pair: parsedKey.characters, relationship: parsedKey.relationship, entries: [] });
+      groups.get(groupKey).entries.push(toArchiveEntry(entry, parsedKey.rank, config.id));
     }
-    if (!pair || !supportEntries.length) continue;
-    conversations.push(await saveConversation(config, "main", names, pair, fileName, fileName, supportEntries));
+    for (const group of groups.values()) {
+      conversations.push(await saveConversation(config, "main", names, group.pair, fileName, fileName, group.entries, "", group.relationship));
+    }
   }
 
   return finalizeMode(config, "main", "본편 지원회화", names, conversations);
@@ -158,15 +163,15 @@ async function buildDlcMode(config, names) {
       const parsedKey = extractDlcSupportKey(entry.key, names);
       if (!parsedKey || !entry.value.trim() || !isAllowedPlayerVariant(entry.key, config.id)) continue;
       if (!isAllowedArchivePair(parsedKey.characters, config.id)) continue;
-      const groupKey = parsedKey.characters.join("\0");
-      if (!groups.has(groupKey)) groups.set(groupKey, { pair: parsedKey.characters, entries: [] });
+      const groupKey = [...parsedKey.characters, parsedKey.relationship].join("\0");
+      if (!groups.has(groupKey)) groups.set(groupKey, { pair: parsedKey.characters, relationship: parsedKey.relationship, entries: [] });
       groups.get(groupKey).entries.push(toArchiveEntry(entry, parsedKey.variant, config.id));
     }
     for (const group of groups.values()) {
       group.entries.sort((a, b) => naturalCompare(a.key, b.key));
       const pairLabel = group.pair.map((id) => displayName(id, names, config.id)).join(" × ");
       const title = `${sourceLabel} · ${pairLabel}`;
-      conversations.push(await saveConversation(config, "dlc", names, group.pair, title, path.basename(filePath), group.entries, sourceLabel));
+      conversations.push(await saveConversation(config, "dlc", names, group.pair, title, path.basename(filePath), group.entries, sourceLabel, group.relationship));
     }
   }
   conversations.sort((a, b) => naturalCompare(a.title, b.title));
@@ -187,15 +192,16 @@ function toArchiveEntry(entry, label, gameId) {
   };
 }
 
-async function saveConversation(config, modeId, names, pair, title, sourceFile, entries, sourceLabel = "") {
-  const identity = `${config.id}:${modeId}:${sourceFile}:${pair.join(":")}:${title}`;
+async function saveConversation(config, modeId, names, pair, title, sourceFile, entries, sourceLabel = "", relationship = "일반") {
+  const identity = `${config.id}:${modeId}:${sourceFile}:${pair.join(":")}:${title}:${relationship}`;
   const id = createHash("sha1").update(identity).digest("hex").slice(0, 14);
   const relativePath = `./data/conversations/${config.id}/${modeId}/${id}.json`;
   const payload = {
     id,
     game: config.id,
     mode: modeId,
-    title: modeId === "main" ? pair.map((id) => displayName(id, names, config.id)).join(" × ") : title.replace(/\.txt$/u, ""),
+    title: `${modeId === "main" ? pair.map((id) => displayName(id, names, config.id)).join(" × ") : title.replace(/\.txt$/u, "")} · ${relationship}`,
+    relationship,
     sourceFile,
     sourceLabel,
     characters: pair,
@@ -208,6 +214,7 @@ async function saveConversation(config, modeId, names, pair, title, sourceFile, 
     sourceLabel,
     characters: pair,
     entryLabels: entries.map((entry) => entry.label),
+    relationship,
     path: relativePath,
   };
 }

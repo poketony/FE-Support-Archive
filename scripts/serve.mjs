@@ -13,6 +13,7 @@ const mime = new Map([
   [".json", "application/json; charset=utf-8"],
   [".webmanifest", "application/manifest+json; charset=utf-8"],
   [".png", "image/png"],
+  [".jpg", "image/jpeg"],
   [".svg", "image/svg+xml"],
 ]);
 

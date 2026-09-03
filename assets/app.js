@@ -194,26 +194,20 @@ function landingScreen() {
   const fatesStats = gameStats(fates);
   return `
     <main class="landing">
-      <div class="brand-plaque">
-        <img class="brand-logo" src="./assets/logo.png" alt="파이어 엠블렘 지원회화" />
-        <p class="eyebrow">한국어 지원회화 아카이브</p>
-      </div>
+      <p class="eyebrow">한국어 지원회화 아카이브</p>
       <h1>기록을 펼칠 세계를 선택하세요</h1>
       <div class="game-grid">
-        <button class="game-card game-card--awakening" data-action="choose-game" data-game="awakening">
-          <span class="game-art game-art--awakening" aria-hidden="true"><img src="./assets/awakening-keyart.png" alt="" /></span>
+        <button class="game-card game-box-card" data-action="choose-game" data-game="awakening">
+          <img class="game-box-art" src="./assets/awakening-box.png" alt="파이어 엠블렘 각성 박스 아트" width="500" height="505" />
           <span class="game-card-copy">
-            <small>THE FIRST RECORD</small>
             <strong>각성</strong>
             <em>${awakeningStats}</em>
           </span>
           <span class="card-arrow" aria-hidden="true">→</span>
         </button>
-        <button class="game-card game-card--fates" data-action="choose-game" data-game="fates">
-          <span class="fates-side fates-side--birthright" aria-hidden="true"><img src="./assets/fates-birthright-logo.webp" alt="" /></span>
-          <span class="fates-side fates-side--conquest" aria-hidden="true"><img src="./assets/fates-conquest-logo.webp" alt="" /></span>
+        <button class="game-card game-box-card" data-action="choose-game" data-game="fates">
+          <img class="game-box-art" src="./assets/fates-box.jpg" alt="파이어 엠블렘 if 박스 아트" width="500" height="459" />
           <span class="game-card-copy game-card-copy--fates">
-            <small>CHOOSE YOUR FATE</small>
             <strong>if</strong>
             <em>${fatesStats}</em>
           </span>

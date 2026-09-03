@@ -47,10 +47,10 @@ export function extractMainSupportKey(key, names = new Map()) {
   if (!match) return null;
   const ids = match[1]
     .split("_")
-    .filter((part) => part && !["親子", "恋人", "兄弟", "姉妹"].includes(part))
+    .filter((part) => part && !["親子", "恋人", "兄弟", "姉妹", "夫婦", "家族", "通常", "一般"].includes(part))
     .map((part) => canonicalCharacterId(part, names));
   if (ids.length < 2 || ids[0] === ids[1]) return null;
-  return { characters: ids.slice(0, 2), rank: match[2] };
+  return { characters: ids.slice(0, 2), rank: match[2], relationship: relationshipLabel(key) };
 }
 
 export function extractDlcSupportKey(key, names = new Map()) {
@@ -66,14 +66,24 @@ export function extractDlcSupportKey(key, names = new Map()) {
     characters.push(canonical);
     if (characters.length === 2) break;
   }
-  return characters.length === 2 ? { characters, variant: dlcVariantLabel(key) } : null;
+  return characters.length === 2 ? { characters, variant: dlcVariantLabel(key), relationship: relationshipLabel(key) } : null;
+}
+
+export function relationshipLabel(key) {
+  const tokens = key.split("_");
+  const has = (marker) => tokens.some((token) => token === marker || token === "プレイヤー" + marker);
+  if (has("親子")) return "가족 · 부모·자녀";
+  if (has("兄弟") || has("姉妹")) return "가족 · 형제·자매";
+  if (has("夫婦")) return "부부";
+  if (has("恋人")) return "연인";
+  if (has("家族")) return "가족";
+  return "일반";
 }
 
 export function dlcVariantLabel(key) {
   const gender = key.match(/_(PCM|PCF)(\d+)$/u);
-  if (gender) return `${gender[1] === "PCM" ? "남성" : "여성"} ${gender[2]}`;
-  const part = key.match(/_0?(\d+)$/u);
-  return part ? `${Number(part[1])}편` : "회화";
+  const part = key.replace(/_PC[MF]\d+$/u, "").match(/_0?(\d+)$/u);
+  return [gender ? (gender[1] === "PCM" ? "남성" : "여성") : "", part ? `${Number(part[1])}편` : ""].filter(Boolean).join(" · ") || "회화";
 }
 
 export function isAllowedPlayerVariant(key, gameId) {
@@ -83,6 +93,10 @@ export function isAllowedPlayerVariant(key, gameId) {
 
 export function isAllowedArchivePair(characters, gameId) {
   return !characters.includes("父親") && !(gameId === "awakening" && characters.includes("ルキナ"));
+}
+
+export function isAllowedArchiveSource(fileName, gameId) {
+  return isAllowedArchivePair(fileName.replace(/\.txt$/u, "").split("_"), gameId);
 }
 
 export function parseScript(script, options = {}) {
