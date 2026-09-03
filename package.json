@@ -1,0 +1,15 @@
+{
+  "name": "fe-support-archive",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:data": "node scripts/build-data.mjs --source ../FE13-Messages --output .",
+    "serve": "node scripts/serve.mjs",
+    "test": "node --test --test-isolation=none",
+    "verify": "node scripts/validate-data.mjs --root ."
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,6 @@
+.cache/
+/assets/portraits/
+/data/
+/dist/
+.DS_Store
+Thumbs.db
