@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { isAllowedArchivePair, isAllowedArchiveSource, isAllowedPlayerVariant, extractMainSupportKey, extractDlcSupportKey, relationshipLabel } from "../scripts/lib/parser.mjs";
-import { characterName, visibleText } from "../assets/display.js";
+import { characterName, transcriptCharacterId, visibleText } from "../assets/display.js";
 import { selectDlcContent } from "../assets/archive-navigation.js";
 
 test("keeps only the requested player script variants", () => {
@@ -66,6 +66,17 @@ test("display names and untranslated text never leak Japanese", () => {
   assert.equal(characterName("unknown", { unknown: "未翻訳" }), "이름 미상");
   assert.equal(visibleText("안녕하세요."), "안녕하세요.");
   assert.equal(visibleText("こんにちは"), "아직 번역되지 않은 대사입니다.");
+});
+
+test("Awakening transcript Lucina uses the retained portrait without restoring excluded entries", () => {
+  const characters = [{ id: "マルス", name: "루키나", portrait: "./lucina.png" }];
+  const portrait = characters.find((item) => item.id === transcriptCharacterId("ルキナ", "awakening"))?.portrait;
+  assert.equal(portrait, "./lucina.png");
+  assert.equal(transcriptCharacterId("マルス", "awakening"), "マルス");
+  assert.equal(transcriptCharacterId("デジェル", "awakening"), "デジェル");
+  assert.equal(transcriptCharacterId("ルキナ", "fates"), "ルキナ");
+  assert.equal(isAllowedArchivePair(["ルキナ", "デジェル"], "awakening"), false);
+  assert.equal(isAllowedArchiveSource("デジェル_ルキナ.txt", "awakening"), false);
 });
 
 test("DLC selection isolates conversations and both directions of partner links", () => {

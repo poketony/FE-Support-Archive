@@ -39,6 +39,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px 
 .landing::after { width: min(62rem, 92vw); height: 1px; bottom: 9%; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .65; }
 .brand-plaque { position: relative; z-index: 1; width: min(42rem, 88vw); padding: 1rem 2.6rem .8rem; background: linear-gradient(100deg, #f8f7f3, #dce6f1 54%, #f8f7f3); box-shadow: 0 16px 55px rgba(0, 0, 0, .32); clip-path: polygon(4% 0, 100% 0, 96% 100%, 0 100%); }
 .brand-logo { display: block; width: 100%; height: auto; }
+.landing .brand-plaque { width: min(28rem, 84vw); }
 .eyebrow { margin: 1rem 0 .45rem; color: var(--gold); font-size: .82rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .brand-plaque .eyebrow { margin: .25rem 0 0; color: #596273; }
 .landing h1, .choice-panel h1, .archive-intro h1 { margin: 0; font-family: Cambria, "Noto Serif KR", serif; font-size: clamp(1.65rem, 4vw, 2.65rem); font-weight: 500; letter-spacing: -.04em; }

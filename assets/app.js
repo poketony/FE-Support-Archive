@@ -1,6 +1,6 @@
 import { GameRenderer } from "./game-renderer.js";
 import { splitConversationFrames } from "./renderer-format.js";
-import { characterName, visibleText } from "./display.js";
+import { characterName, transcriptCharacterId, visibleText } from "./display.js";
 import { selectDlcContent } from "./archive-navigation.js";
 
 const app = document.querySelector("#app");
@@ -194,7 +194,10 @@ function landingScreen() {
   const fatesStats = gameStats(fates);
   return `
     <main class="landing">
-      <p class="eyebrow">한국어 지원회화 아카이브</p>
+      <div class="brand-plaque">
+        <img class="brand-logo" src="./assets/logo.png" alt="파이어 엠블렘 지원회화" />
+        <p class="eyebrow">한국어 지원회화 아카이브</p>
+      </div>
       <h1>기록을 펼칠 세계를 선택하세요</h1>
       <div class="game-grid">
         <button class="game-card game-box-card" data-action="choose-game" data-game="awakening">
@@ -404,7 +407,7 @@ function readerMarkup() {
 function segmentMarkup(entry) {
   const mode = currentMode();
   return entry.segments.map((segment) => {
-    const character = mode.characters.find((item) => item.id === segment.speaker);
+    const character = mode.characters.find((item) => item.id === transcriptCharacterId(segment.speaker, state.gameId));
     const name = characterName(segment.speaker, currentGame().names, state.playerName || defaultPlayerName());
     return `
       <article class="speech ${character ? "" : "speech--narration"}">

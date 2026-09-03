@@ -11,6 +11,10 @@ export function visibleText(text) {
   return JAPANESE.test(text) ? "아직 번역되지 않은 대사입니다." : text;
 }
 
+export function transcriptCharacterId(id, gameId) {
+  return gameId === "awakening" && id === "ルキナ" ? "マルス" : id;
+}
+
 export function characterName(id, names, playerName = "") {
   if (id === "나레이션") return id;
   if (id.startsWith("username") || id.startsWith("プレイヤー")) return playerName || "주인공";
