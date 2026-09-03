@@ -1,6 +1,7 @@
 // Adapted from Awakening Live Renderer and SciresM/FEITS (GPL-3.0).
 // Archive changes: game-specific metadata, Korean controls, and browser playback.
 import { splitConversationFrames } from "./renderer-format.js";
+import { characterName, visibleText } from "./display.js";
 
 const GAME_CONFIGS = {
   awakening: {
@@ -169,7 +170,7 @@ export class GameRenderer {
       ...[...missing].map((item) => ({ type: "asset", message: `누락 에셋(투명 처리): ${item}` })),
       ...[...state.unknownCodes].map((item) => ({ type: "code", message: `알 수 없는 제어코드(무시): ${item}` })),
     ];
-    return { frameCount: frames.length, frameIndex, diagnostics, type: state.type, message: visibleMessage };
+    return { frameCount: frames.length, frameIndex, diagnostics, type: state.type, message: visibleText(visibleMessage) };
   }
 
   parseFrame(source, state) {
@@ -388,8 +389,7 @@ export class GameRenderer {
   }
 
   displayName(name, nameMap, playerName) {
-    if (name.startsWith("username")) return playerName;
-    return nameMap.get(name) ?? name;
+    return characterName(name, nameMap, playerName);
   }
 
   async drawStage(context, character, active, missing, playerGender) {
@@ -502,6 +502,7 @@ export class GameRenderer {
   }
 
   drawString(context, text, startX, startY, color, missing) {
+    text = visibleText(text);
     let x = startX;
     let y = startY;
     for (const character of text) {

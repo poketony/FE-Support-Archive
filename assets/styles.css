@@ -82,6 +82,14 @@ body[data-game="fates"] .site-header { background: linear-gradient(110deg, rgba(
 .text-button, .reset-button { position: relative; z-index: 1; padding: 0; border: 0; background: transparent; color: var(--accent); cursor: pointer; }
 .choice-panel > .eyebrow { margin-top: 2.4rem; }
 .mode-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 2rem; }
+.dlc-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+.dlc-card { overflow: hidden; padding: 0; border: 1px solid var(--line); background: var(--panel); color: var(--ink); text-align: left; cursor: pointer; }
+.dlc-card:hover { border-color: var(--gold); }
+.dlc-card img { display: block; width: 100%; height: auto; aspect-ratio: 386 / 232; object-fit: cover; }
+.dlc-card > span { display: grid; gap: .5rem; padding: 1rem; }
+.dlc-card strong { font-size: 1.2rem; }
+.dlc-card small { color: var(--muted); font-size: .875rem; }
+.dlc-card-placeholder { display: grid; place-items: center; aspect-ratio: 386 / 232; color: var(--gold); font-size: 2rem; }
 .mode-card { min-height: 11rem; padding: 1.5rem; border-radius: .1rem; }
 .mode-card > span:nth-child(2) { display: grid; gap: .45rem; }
 .mode-card strong { font-family: Cambria, "Noto Serif KR", serif; font-size: 1.4rem; }
@@ -106,7 +114,7 @@ body[data-game="fates"] .mode-card:first-child .mode-ornament { color: #821524; 
 .picker-column.is-disabled { background: rgba(10, 17, 29, .8); }
 body[data-game="fates"] .picker-column:first-child { border-top: 3px solid #e6e2d8; }
 body[data-game="fates"] .picker-column:last-child { border-top: 3px solid #8b68a1; }
-.picker-link { display: grid; place-items: center; align-self: center; width: 2.8rem; aspect-ratio: 1; border: 1px solid rgba(208,180,119,.5); background: var(--navy); color: var(--gold); font-family: Cambria, serif; font-size: 1.5rem; transform: rotate(45deg); }
+.picker-link { display: grid; place-items: center; align-self: center; width: 2.8rem; aspect-ratio: 1; border: 1px solid rgba(208,180,119,.5); background: var(--navy); color: var(--gold); font-family: Cambria, serif; font-size: 1.5rem; transform: rotate(45deg); pointer-events: none; }
 .picker-heading { display: flex; align-items: center; gap: .85rem; min-height: 3.2rem; }
 .picker-heading h2 { margin: .1rem 0 0; font-family: Cambria, "Noto Serif KR", serif; font-size: 1.25rem; }
 .picker-heading small { color: var(--muted); font-size: .8rem; }
@@ -216,7 +224,7 @@ body[data-game="fates"] .archive-shell footer { margin-top: 1rem; background: #1
 
 @media (max-width: 680px) {
   body[data-game="fates"] { background: linear-gradient(160deg, #f4f1e9 0 11rem, #14151a 11.1rem 100%); }
-  .game-grid, .mode-grid { grid-template-columns: 1fr; }
+  .game-grid, .mode-grid, .dlc-grid { grid-template-columns: 1fr; }
   .landing { place-content: center stretch; padding: 1.1rem; }
   .landing::before { inset: .55rem; }
   .brand-plaque { justify-self: center; padding: .7rem 1.4rem .6rem; }
@@ -230,7 +238,7 @@ body[data-game="fates"] .archive-shell footer { margin-top: 1rem; background: #1
   .profile-controls { align-items: stretch; flex-direction: column; width: 100%; }
   .profile-controls input[type="text"] { width: 100%; }
   .picker { grid-template-columns: 1fr; gap: .8rem; }
-  .picker-link { position: absolute; z-index: 2; left: calc(50% - 1.4rem); margin-top: 30.6rem; }
+  .picker-link { display: none; }
   .picker-column { min-height: 27rem; }
   .character-grid { max-height: 20rem; }
   .selected-character, .disabled-state { min-height: 20rem; }

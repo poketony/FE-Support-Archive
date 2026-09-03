@@ -1,5 +1,7 @@
 import { GameRenderer } from "./game-renderer.js";
 import { splitConversationFrames } from "./renderer-format.js";
+import { characterName, visibleText } from "./display.js";
+import { selectDlcContent } from "./archive-navigation.js";
 
 const app = document.querySelector("#app");
 const renderers = new Map();
@@ -9,6 +11,8 @@ const state = {
   archive: null,
   gameId: "",
   modeId: "",
+  contentId: "",
+  selectedMode: null,
   firstId: "",
   secondId: "",
   conversationId: "",
@@ -52,13 +56,15 @@ app.addEventListener("click", (event) => {
   if (action === "home") navigate([]);
   if (action === "choose-game") navigate([target.dataset.game]);
   if (action === "choose-mode") navigate([state.gameId, target.dataset.mode]);
+  if (action === "choose-content") navigate([state.gameId, "dlc", target.dataset.content]);
+  if (action === "back-content") navigate([state.gameId, "dlc"]);
   if (action === "back-game") navigate([state.gameId]);
-  if (action === "choose-first") navigate([state.gameId, state.modeId, target.dataset.character]);
-  if (action === "choose-second") navigate([state.gameId, state.modeId, state.firstId, target.dataset.character]);
-  if (action === "clear-first") navigate([state.gameId, state.modeId]);
-  if (action === "clear-second") navigate([state.gameId, state.modeId, state.firstId]);
+  if (action === "choose-first") navigate(explorerPath(target.dataset.character));
+  if (action === "choose-second") navigate(explorerPath(state.firstId, target.dataset.character));
+  if (action === "clear-first") navigate(explorerPath());
+  if (action === "clear-second") navigate(explorerPath(state.firstId));
   if (action === "open-conversation") {
-    navigate([state.gameId, state.modeId, state.firstId, state.secondId, target.dataset.conversation]);
+    navigate(explorerPath(state.firstId, state.secondId, target.dataset.conversation));
   }
   if (action === "choose-entry") {
     state.entryIndex = Number(target.dataset.entry || 0);
@@ -112,11 +118,15 @@ app.addEventListener("error", (event) => {
 
 function readRoute() {
   const parts = location.hash.replace(/^#\/?/u, "").split("/").filter(Boolean).map(decodeURIComponent);
-  const [gameId = "", modeId = "", firstId = "", secondId = "", conversationId = ""] = parts;
+  const [gameId = "", modeId = "", ...tail] = parts;
   const game = state.archive?.games.find((item) => item.id === gameId);
   state.gameId = game?.id || "";
   state.modeId = game?.modes?.[modeId] ? modeId : "";
-  const mode = state.modeId ? game.modes[state.modeId] : null;
+  const baseMode = state.modeId ? game.modes[state.modeId] : null;
+  state.selectedMode = state.modeId === "dlc" ? selectDlcContent(baseMode, tail[0]) : baseMode;
+  state.contentId = state.modeId === "dlc" && state.selectedMode ? tail[0] : "";
+  const mode = state.selectedMode;
+  const [firstId = "", secondId = "", conversationId = ""] = state.modeId === "dlc" ? tail.slice(1) : tail;
   const ids = new Set(mode?.characters.map((character) => character.id) || []);
   state.firstId = ids.has(firstId) ? firstId : "";
   state.secondId = state.firstId && ids.has(secondId) && secondId !== state.firstId ? secondId : "";
@@ -134,6 +144,10 @@ function readRoute() {
 function navigate(parts) {
   const next = parts.filter(Boolean).map(encodeURIComponent).join("/");
   location.hash = next ? `#/${next}` : "#/";
+}
+
+function explorerPath(...tail) {
+  return [state.gameId, state.modeId, ...(state.modeId === "dlc" ? [state.contentId] : []), ...tail];
 }
 
 async function loadSelectedConversation() {
@@ -167,6 +181,7 @@ function render() {
   if (!state.archive) return;
   if (!state.gameId) app.innerHTML = landingScreen();
   else if (!state.modeId) app.innerHTML = modeScreen();
+  else if (state.modeId === "dlc" && !state.contentId) app.innerHTML = contentScreen();
   else app.innerHTML = explorerScreen();
   paintFrame();
   if (state.conversationId && !state.conversation && !state.loadingConversation) loadSelectedConversation();
@@ -239,6 +254,25 @@ function modeScreen() {
     </main>`;
 }
 
+function contentScreen() {
+  const game = currentGame();
+  return `<main class="choice-page">
+    ${compactHeader()}
+    <section class="choice-panel">
+      <button class="text-button" data-action="back-game">← ${escapeHtml(game.shortLabel)} 메뉴</button>
+      <p class="eyebrow">DLC 지원회화</p>
+      <h1>콘텐츠를 선택하세요</h1>
+      <div class="dlc-grid">${game.modes.dlc.collections.map((content) => {
+        const count = game.modes.dlc.conversations.filter((item) => item.sourceLabel === content.label).length;
+        return `<button class="dlc-card" data-action="choose-content" data-content="${content.id}">
+          ${content.image ? `<img src="${content.image}" alt="${escapeHtml(content.label)} 게임 화면" width="386" height="232" />` : '<div class="dlc-card-placeholder" aria-hidden="true">DLC</div>'}
+          <span><strong>${escapeHtml(content.label)}</strong><small>${count}개 회화</small></span>
+        </button>`;
+      }).join("")}</div>
+    </section>
+  </main>`;
+}
+
 function explorerScreen() {
   const game = currentGame();
   const mode = currentMode();
@@ -249,7 +283,7 @@ function explorerScreen() {
       ${compactHeader(true)}
       <section class="archive-intro">
         <div>
-          <button class="text-button" data-action="back-game">← ${escapeHtml(game.shortLabel)} 메뉴</button>
+          <button class="text-button" data-action="${state.modeId === "dlc" ? "back-content" : "back-game"}">← ${state.modeId === "dlc" ? "DLC 다시 선택" : escapeHtml(game.shortLabel) + " 메뉴"}</button>
           <p class="eyebrow">${escapeHtml(game.label)}</p>
           <h1>${escapeHtml(mode.label)}</h1>
         </div>
@@ -257,8 +291,8 @@ function explorerScreen() {
           <label>주인공 이름<input id="player-name" type="text" maxlength="12" value="${escapeHtml(state.playerName || defaultPlayerName())}" /></label>
           <fieldset>
             <legend>성별 문구</legend>
-            <label><input type="radio" name="player-gender" value="female" ${state.playerGender === "female" ? "checked" : ""} /> 여성</label>
             <label><input type="radio" name="player-gender" value="male" ${state.playerGender === "male" ? "checked" : ""} /> 남성</label>
+            <label><input type="radio" name="player-gender" value="female" ${state.playerGender === "female" ? "checked" : ""} /> 여성</label>
           </fieldset>
         </div>
       </section>
@@ -323,7 +357,7 @@ function characterCards(slot, characters) {
 }
 
 function selectedCharacter(character) {
-  return `<div class="selected-character">${portraitMarkup(character, true)}<div><strong>${escapeHtml(character.name)}</strong><small>${escapeHtml(character.id)}</small></div></div>`;
+  return `<div class="selected-character">${portraitMarkup(character, true)}<div><strong>${escapeHtml(character.name)}</strong></div></div>`;
 }
 
 function disabledPicker() {
@@ -352,7 +386,7 @@ function readerMarkup() {
   return `
     <section id="conversation-reader" class="reader">
       <div class="reader-header">
-        <div><p class="eyebrow">${escapeHtml(conversation.sourceLabel || currentMode().label)}</p><h2>${escapeHtml(conversation.title)}</h2><small>${escapeHtml(conversation.sourceFile)}</small></div>
+        <div><p class="eyebrow">${escapeHtml(conversation.sourceLabel || currentMode().label)}</p><h2>${escapeHtml(conversation.title)}</h2></div>
         <div class="rank-tabs" aria-label="회화 구간">${tabs}</div>
       </div>
       <div class="game-player">
@@ -377,13 +411,13 @@ function segmentMarkup(entry) {
   const mode = currentMode();
   return entry.segments.map((segment) => {
     const character = mode.characters.find((item) => item.id === segment.speaker);
-    const name = currentGame().names[segment.speaker] || (segment.speaker === "プレイヤー" ? (state.playerName || defaultPlayerName()) : segment.speaker);
+    const name = characterName(segment.speaker, currentGame().names, state.playerName || defaultPlayerName());
     return `
       <article class="speech ${character ? "" : "speech--narration"}">
         <div class="speaker-portrait">${character ? portraitMarkup(character) : '<span class="portrait portrait--empty" aria-hidden="true"></span>'}</div>
         <div class="speech-body">
-          <div class="speaker-line"><strong>${escapeHtml(name)}</strong>${segment.emotion && segment.emotion !== "通常" ? `<small>${escapeHtml(segment.emotion)}</small>` : ""}</div>
-          <p>${escapeHtml(personalize(segment.text)).replaceAll("\n", "<br />")}</p>
+          <div class="speaker-line"><strong>${escapeHtml(name)}</strong></div>
+          <p>${escapeHtml(visibleText(personalize(segment.text))).replaceAll("\n", "<br />")}</p>
         </div>
       </article>`;
   }).join("");
@@ -467,7 +501,7 @@ function personalize(text) {
 }
 
 function currentGame() { return state.archive.games.find((game) => game.id === state.gameId); }
-function currentMode() { return currentGame().modes[state.modeId]; }
+function currentMode() { return state.selectedMode || currentGame().modes[state.modeId]; }
 function findCharacter(id) { return currentMode().characters.find((character) => character.id === id); }
 function partnerCharacters(character) {
   const allowed = new Set(character.partners);

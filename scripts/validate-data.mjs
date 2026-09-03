@@ -1,5 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { isAllowedArchivePair, isAllowedPlayerVariant } from "./lib/parser.mjs";
+import { visibleText } from "../assets/display.js";
 
 const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.root ?? ".");
@@ -16,8 +18,19 @@ for (const game of index.games) {
     const ids = new Set(mode.characters.map((character) => character.id));
     if (!mode.characters.length) problems.push(`${game.id}/${mode.id}: 캐릭터가 없습니다.`);
     if (!mode.conversations.length) problems.push(`${game.id}/${mode.id}: 회화가 없습니다.`);
+    if (mode.id === "dlc") {
+      for (const content of mode.collections || []) {
+        if (!mode.conversations.some((item) => item.sourceLabel === content.label)) problems.push(`${content.id}: 빈 DLC`);
+        if (content.image && !(await isFile(path.join(root, content.image)))) problems.push(`${content.id}: DLC 이미지 누락`);
+      }
+      if (!mode.collections?.length) problems.push(`${game.id}: DLC 선택 목록 누락`);
+    }
 
     for (const character of mode.characters) {
+      if (visibleText(character.name) !== character.name) problems.push(`${game.id}: 일본어 인물명 노출`);
+      if (!isAllowedArchivePair([character.id], game.id)) problems.push(`${game.id}: 제외 대상 인물 노출`);
+      if (game.id === "awakening" && character.id === "マルス" && character.name !== "루키나") problems.push("루키나 이름 불일치");
+      if (character.id === "ベロア" && !character.portrait) problems.push("벨로리아 초상화 누락");
       for (const partner of character.partners) {
         if (!ids.has(partner)) problems.push(`${game.id}/${mode.id}: 없는 상대 ${partner}`);
         const reverse = mode.characters.find((item) => item.id === partner)?.partners.includes(character.id);
@@ -25,7 +38,8 @@ for (const game of index.games) {
       }
       if (character.portrait) {
         portraitCount += 1;
-        const hairPath = path.join(root, "assets/renderers", game.id, "img/hair", `${character.id}_bu_髪0.png`);
+        const assetId = character.id === "ベロア" ? "べロア" : character.id;
+        const hairPath = path.join(root, "assets/renderers", game.id, "img/hair", `${assetId}_bu_髪0.png`);
         if (await isFile(hairPath)) {
           if (!character.portrait.endsWith(".svg")) {
             problems.push(`${game.id}/${character.id}: 선택용 초상화 머리카락 합성 누락`);
@@ -44,6 +58,7 @@ for (const game of index.games) {
     }
 
     for (const metadata of mode.conversations) {
+      if (visibleText(metadata.title) !== metadata.title) problems.push(`${metadata.id}: 일본어 제목 노출`);
       conversationCount += 1;
       if (metadata.characters.length !== 2 || metadata.characters.some((id) => !ids.has(id))) {
         problems.push(`${game.id}/${mode.id}/${metadata.id}: 캐릭터 참조 오류`);
@@ -56,6 +71,7 @@ for (const game of index.games) {
       const conversation = JSON.parse(await readFile(filePath, "utf8"));
       if (!conversation.entries.length) problems.push(`${game.id}/${mode.id}/${metadata.id}: 빈 회화`);
       for (const entry of conversation.entries) {
+        if (!isAllowedPlayerVariant(entry.key, game.id)) problems.push(`${metadata.id}: 제외 대상 주인공 변형`);
         entryCount += 1;
         if (!entry.script?.trim()) problems.push(`${game.id}/${metadata.id}/${entry.key}: 렌더링 스크립트 없음`);
         segmentCount += entry.segments.length;

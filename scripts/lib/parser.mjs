@@ -76,6 +76,15 @@ export function dlcVariantLabel(key) {
   return part ? `${Number(part[1])}편` : "회화";
 }
 
+export function isAllowedPlayerVariant(key, gameId) {
+  const variant = key.match(/_(PC[MF]\d+)(?:_|$)/u)?.[1];
+  return !variant || variant === "PCM1" || variant === (gameId === "awakening" ? "PCF1" : "PCF2");
+}
+
+export function isAllowedArchivePair(characters, gameId) {
+  return !characters.includes("父親") && !(gameId === "awakening" && characters.includes("ルキナ"));
+}
+
 export function parseScript(script, options = {}) {
   const playerId = options.playerId ?? "プレイヤー";
   const segments = [];

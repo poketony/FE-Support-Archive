@@ -3,6 +3,7 @@ import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from "node:fs
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { composePortraitSvg } from "./lib/portrait.mjs";
+import { NAME_OVERRIDES, characterName } from "../assets/display.js";
 import {
   canonicalCharacterId,
   extractDlcSupportKey,
@@ -10,6 +11,8 @@ import {
   parseMessageDocument,
   parseNameMap,
   parseScript,
+  isAllowedPlayerVariant,
+  isAllowedArchivePair,
 } from "./lib/parser.mjs";
 
 const args = parseArgs(process.argv.slice(2));
@@ -19,6 +22,13 @@ const outputRoot = path.resolve(args.output ?? projectRoot);
 const feitsRoot = args.feits ? path.resolve(args.feits) : null;
 if (!feitsRoot) throw new Error("실제 if 렌더링 리소스를 위해 --feits 경로가 필요합니다.");
 const awakeningAssets = path.join(sourceRoot, "Awakening", "Awakening-Live-Renderer", "assets", "awakening");
+const DLC_CONTENT = {
+  "인연의 여름": { id: "summer", image: "./assets/dlc-summer.png" },
+  "인연의 비밀 온천": { id: "hot-spring", image: "./assets/dlc-hot-spring.png" },
+  "인연의 수확제": { id: "harvest", image: null },
+  "인연의 백야제": { id: "hoshido", image: "./assets/dlc-hoshido.png" },
+  "인연의 암야제": { id: "nohr", image: "./assets/dlc-nohr.png" },
+};
 
 const GAME_CONFIGS = [
   {
@@ -61,6 +71,9 @@ await mkdir(path.join(outputRoot, "assets", "portraits"), { recursive: true });
 
 for (const config of GAME_CONFIGS) {
   const names = parseNameMap(await readFile(config.gameData, "utf8"));
+  for (const [id, name] of Object.entries(NAME_OVERRIDES)) names.set(id, name);
+  names.set("べロア", names.get("ベロア") || "벨로리아");
+  if (config.id === "awakening") names.set("マルス", "루키나");
   if (!names.has("プレイヤー")) names.set("プレイヤー", config.id === "awakening" ? "러플레" : "카무이");
   const main = await buildMainMode(config, names);
   const dlc = await buildDlcMode(config, names);
@@ -85,6 +98,15 @@ async function copySiteShell() {
   const files = [
     "index.html",
     "assets/app.js",
+    "assets/display.js",
+    "assets/archive-navigation.js",
+    "manifest.webmanifest",
+    "assets/icon-192.png",
+    "assets/icon-512.png",
+    "assets/dlc-summer.png",
+    "assets/dlc-hot-spring.png",
+    "assets/dlc-hoshido.png",
+    "assets/dlc-nohr.png",
     "assets/game-renderer.js",
     "assets/renderer-format.js",
     "LICENSE.txt",
@@ -115,7 +137,8 @@ async function buildMainMode(config, names) {
     let pair = null;
     for (const entry of entries) {
       const parsedKey = extractMainSupportKey(entry.key, names);
-      if (!parsedKey || !entry.value.trim()) continue;
+      if (!parsedKey || !entry.value.trim() || !isAllowedPlayerVariant(entry.key, config.id)) continue;
+      if (!isAllowedArchivePair(parsedKey.characters, config.id)) continue;
       pair ??= parsedKey.characters;
       if (pair.join("\0") !== parsedKey.characters.join("\0")) continue;
       supportEntries.push(toArchiveEntry(entry, parsedKey.rank, config.id));
@@ -133,7 +156,8 @@ async function buildDlcMode(config, names) {
     const groups = new Map();
     for (const entry of parseMessageDocument(await readFile(filePath, "utf8"))) {
       const parsedKey = extractDlcSupportKey(entry.key, names);
-      if (!parsedKey || !entry.value.trim()) continue;
+      if (!parsedKey || !entry.value.trim() || !isAllowedPlayerVariant(entry.key, config.id)) continue;
+      if (!isAllowedArchivePair(parsedKey.characters, config.id)) continue;
       const groupKey = parsedKey.characters.join("\0");
       if (!groups.has(groupKey)) groups.set(groupKey, { pair: parsedKey.characters, entries: [] });
       groups.get(groupKey).entries.push(toArchiveEntry(entry, parsedKey.variant, config.id));
@@ -146,7 +170,9 @@ async function buildDlcMode(config, names) {
     }
   }
   conversations.sort((a, b) => naturalCompare(a.title, b.title));
-  return finalizeMode(config, "dlc", "DLC 지원회화", names, conversations);
+  const mode = await finalizeMode(config, "dlc", "DLC 지원회화", names, conversations);
+  mode.collections = config.dlc.map(([label]) => ({ label, ...DLC_CONTENT[label] }));
+  return mode;
 }
 
 function toArchiveEntry(entry, label, gameId) {
@@ -169,7 +195,7 @@ async function saveConversation(config, modeId, names, pair, title, sourceFile, 
     id,
     game: config.id,
     mode: modeId,
-    title: title.replace(/\.txt$/u, ""),
+    title: modeId === "main" ? pair.map((id) => displayName(id, names, config.id)).join(" × ") : title.replace(/\.txt$/u, ""),
     sourceFile,
     sourceLabel,
     characters: pair,
@@ -215,8 +241,9 @@ async function finalizeMode(config, modeId, label, names, conversations) {
 async function copyPortrait(config, rawId) {
   if (!config.portraitDir) return null;
   const id = canonicalCharacterId(rawId);
+  const assetId = id === "ベロア" ? "べロア" : id;
   const candidates = [
-    `${id}_bu_通常.png`,
+    `${assetId}_bu_通常.png`,
     rawId !== id ? `${rawId}_bu_通常.png` : "",
     id === "プレイヤー" ? "プレイヤー男_bu_通常.png" : "",
   ].filter(Boolean);
@@ -253,8 +280,7 @@ async function copyRendererAssets(config) {
 }
 
 function displayName(id, names, gameId) {
-  if (id === "プレイヤー") return gameId === "awakening" ? "러플레" : "카무이";
-  return names.get(id)?.trim() || id;
+  return characterName(id, names, gameId === "awakening" ? "러플레" : "카무이");
 }
 
 async function writeJson(filePath, value) {
