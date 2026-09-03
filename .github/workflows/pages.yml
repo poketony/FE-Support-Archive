@@ -42,7 +42,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Test parser
+      - name: Test parser and search index
         working-directory: site
         run: node --test test/*.test.mjs
 
@@ -52,6 +52,14 @@ jobs:
           --source source/fe-awakening
           --feits source/feits
           --output site/dist
+
+      - name: Build game-wide search indexes
+        run: node site/scripts/build-search-index.mjs --root site/dist
+
+      - name: Copy search UI assets
+        run: |
+          cp site/assets/global-search.js site/dist/assets/global-search.js
+          cp site/assets/global-search.css site/dist/assets/global-search.css
 
       - name: Validate generated archive
         run: |
