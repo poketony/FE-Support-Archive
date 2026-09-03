@@ -6,7 +6,7 @@
   "scripts": {
     "build:data": "node scripts/build-data.mjs --source ../FE13-Messages --output .",
     "serve": "node scripts/serve.mjs",
-    "test": "node --test --test-isolation=none",
+    "test": "node test/parser.test.mjs",
     "verify": "node scripts/validate-data.mjs --root ."
   },
   "engines": {

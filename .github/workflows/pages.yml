@@ -44,7 +44,7 @@ jobs:
 
       - name: Test parser
         working-directory: site
-        run: node --test --test-isolation=none
+        run: node test/parser.test.mjs
 
       - name: Build archive data
         run: >-
