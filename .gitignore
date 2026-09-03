@@ -1,5 +1,6 @@
 .cache/
 /assets/portraits/
+/assets/renderers/
 /data/
 /dist/
 .DS_Store

@@ -29,12 +29,12 @@ jobs:
           repository: poketony/FE-Awakening
           path: source/fe-awakening
 
-      - name: Check out FEITS portrait source
+      - name: Check out FEITS renderer resources
         uses: actions/checkout@v4
         with:
           repository: SciresM/FEITS
           path: source/feits
-          sparse-checkout: FEFTS/Resources/img/face
+          sparse-checkout: FEFTS/Resources
           sparse-checkout-cone-mode: true
 
       - name: Set up Node.js
@@ -44,7 +44,7 @@ jobs:
 
       - name: Test parser
         working-directory: site
-        run: node test/parser.test.mjs
+        run: node --test test/*.test.mjs
 
       - name: Build archive data
         run: >-
@@ -54,7 +54,9 @@ jobs:
           --output site/dist
 
       - name: Validate generated archive
-        run: node site/scripts/validate-data.mjs --root site/dist
+        run: |
+          node site/scripts/validate-data.mjs --root site/dist
+          node site/scripts/validate-renderer.mjs site/dist
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

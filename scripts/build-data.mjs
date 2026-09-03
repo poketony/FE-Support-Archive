@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -16,6 +16,8 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const sourceRoot = path.resolve(args.source ?? path.join(projectRoot, "..", "FE13-Messages"));
 const outputRoot = path.resolve(args.output ?? projectRoot);
 const feitsRoot = args.feits ? path.resolve(args.feits) : null;
+if (!feitsRoot) throw new Error("실제 if 렌더링 리소스를 위해 --feits 경로가 필요합니다.");
+const awakeningAssets = path.join(sourceRoot, "Awakening", "Awakening-Live-Renderer", "assets", "awakening");
 
 const GAME_CONFIGS = [
   {
@@ -61,6 +63,7 @@ for (const config of GAME_CONFIGS) {
   if (!names.has("プレイヤー")) names.set("プレイヤー", config.id === "awakening" ? "러플레" : "카무이");
   const main = await buildMainMode(config, names);
   const dlc = await buildDlcMode(config, names);
+  await copyRendererAssets(config);
   index.games.push({
     id: config.id,
     label: config.label,
@@ -81,6 +84,9 @@ async function copySiteShell() {
   const files = [
     "index.html",
     "assets/app.js",
+    "assets/game-renderer.js",
+    "assets/renderer-format.js",
+    "LICENSE.txt",
     "assets/styles.css",
     "assets/logo.png",
     "assets/awakening-keyart.png",
@@ -146,6 +152,7 @@ function toArchiveEntry(entry, label, gameId) {
   const parsed = parseScript(entry.value, { playerId: "プレイヤー" });
   return {
     key: entry.key,
+    script: entry.value,
     label,
     segments: parsed.segments,
     unknownCommands: parsed.unknownCommands,
@@ -220,6 +227,21 @@ async function copyPortrait(config, rawId) {
     return `./assets/portraits/${fileName}`;
   }
   return null;
+}
+
+async function copyRendererAssets(config) {
+  const source = config.id === "awakening" ? awakeningAssets : path.join(feitsRoot, "FEFTS", "Resources");
+  const destination = path.join(outputRoot, "assets", "renderers", config.id);
+  for (const relative of ["bin/faces.bin", "txt/FID.txt", "img/SupportBG.png", "img/TextBox.png", "img/NameBox.png", "img/KeyPress.png"]) {
+    await mkdir(path.dirname(path.join(destination, relative)), { recursive: true });
+    await copyFile(path.join(source, relative), path.join(destination, relative));
+  }
+  // The live renderer contains the Korean release's glyph metrics and atlases.
+  for (const relative of ["bin/chars.bin", "img/Awakening_0.png", "img/Awakening_1.png"]) {
+    await copyFile(path.join(awakeningAssets, relative), path.join(destination, relative));
+  }
+  await cp(path.join(source, "img", "face"), path.join(destination, "img", "face"), { recursive: true });
+  await cp(path.join(source, "img", "hair"), path.join(destination, "img", "hair"), { recursive: true });
 }
 
 function displayName(id, names, gameId) {

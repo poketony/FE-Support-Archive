@@ -45,6 +45,7 @@ for (const game of index.games) {
       if (!conversation.entries.length) problems.push(`${game.id}/${mode.id}/${metadata.id}: 빈 회화`);
       for (const entry of conversation.entries) {
         entryCount += 1;
+        if (!entry.script?.trim()) problems.push(`${game.id}/${metadata.id}/${entry.key}: 렌더링 스크립트 없음`);
         segmentCount += entry.segments.length;
         if (!entry.segments.length) problems.push(`${game.id}/${mode.id}/${metadata.id}/${entry.key}: 표시 대사 없음`);
       }

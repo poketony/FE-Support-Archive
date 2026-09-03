@@ -1,4 +1,9 @@
+import { GameRenderer } from "./game-renderer.js";
+import { splitConversationFrames } from "./renderer-format.js";
+
 const app = document.querySelector("#app");
+const renderers = new Map();
+let paintVersion = 0;
 
 const state = {
   archive: null,
@@ -8,6 +13,7 @@ const state = {
   secondId: "",
   conversationId: "",
   entryIndex: 0,
+  frameIndex: 0,
   firstQuery: "",
   secondQuery: "",
   conversation: null,
@@ -25,6 +31,7 @@ async function boot() {
     if (!response.ok) throw new Error(`목록 요청 실패 (${response.status})`);
     state.archive = await response.json();
     readRoute();
+    await loadSelectedConversation();
     render();
   } catch (error) {
     state.error = error instanceof Error ? error.message : String(error);
@@ -55,9 +62,22 @@ app.addEventListener("click", (event) => {
   }
   if (action === "choose-entry") {
     state.entryIndex = Number(target.dataset.entry || 0);
+    state.frameIndex = 0;
     render();
     document.querySelector("#conversation-reader")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+});
+
+app.addEventListener("click", (event) => {
+  const action = event.target.closest("[data-action]")?.dataset.action;
+  if (action === "next-frame") changeFrame(1);
+  if (action === "previous-frame") changeFrame(-1);
+});
+
+app.addEventListener("keydown", (event) => {
+  if (!event.target.closest(".game-player") || !["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+  event.preventDefault();
+  changeFrame(event.key === "ArrowLeft" ? -1 : 1);
 });
 
 app.addEventListener("input", (event) => {
@@ -126,8 +146,11 @@ async function loadSelectedConversation() {
   try {
     const response = await fetch(metadata.path);
     if (!response.ok) throw new Error(`회화 요청 실패 (${response.status})`);
-    state.conversation = await response.json();
+    const conversation = await response.json();
+    if (state.conversationId !== metadata.id) return;
+    state.conversation = conversation;
     state.entryIndex = 0;
+    state.frameIndex = 0;
   } catch (error) {
     state.error = error instanceof Error ? error.message : String(error);
   } finally {
@@ -145,6 +168,7 @@ function render() {
   if (!state.gameId) app.innerHTML = landingScreen();
   else if (!state.modeId) app.innerHTML = modeScreen();
   else app.innerHTML = explorerScreen();
+  paintFrame();
   if (state.conversationId && !state.conversation && !state.loadingConversation) loadSelectedConversation();
 }
 
@@ -261,7 +285,7 @@ function explorerScreen() {
       ${state.error ? `<p class="inline-error">${escapeHtml(state.error)}</p>` : ""}
       ${state.loadingConversation ? '<div class="reader-loading">회화를 펼치는 중…</div>' : ""}
       ${state.conversation ? readerMarkup() : ""}
-      <footer>번역 원본: poketony/FE-Awakening · FEITS 렌더링 자료 참고</footer>
+      <footer>번역: poketony/FE-Awakening · 렌더러: Awakening Live Renderer / SciresM FEITS · <a href="./LICENSE.txt">GPL-3.0 · 무보증</a></footer>
     </main>`;
 }
 
@@ -331,7 +355,20 @@ function readerMarkup() {
         <div><p class="eyebrow">${escapeHtml(conversation.sourceLabel || currentMode().label)}</p><h2>${escapeHtml(conversation.title)}</h2><small>${escapeHtml(conversation.sourceFile)}</small></div>
         <div class="rank-tabs" aria-label="회화 구간">${tabs}</div>
       </div>
-      <div class="transcript">${segmentMarkup(entry)}</div>
+      <div class="game-player">
+        <button class="game-screen" data-action="next-frame" aria-label="다음 대사 (좌우 방향키로 이동)">
+          <canvas id="game-canvas" width="400" height="240">게임 회화 화면</canvas>
+        </button>
+        <div class="playback-controls">
+          <button data-action="previous-frame" ${state.frameIndex === 0 ? "disabled" : ""}>← 이전</button>
+          <output id="frame-position">${state.frameIndex + 1} / ${splitConversationFrames(entry.script).length}</output>
+          <button data-action="next-frame" ${state.frameIndex >= splitConversationFrames(entry.script).length - 1 ? "disabled" : ""}>다음 →</button>
+        </div>
+        <p class="playback-hint">화면을 누르거나 ← → 키로 대사를 넘기세요.</p>
+        <p id="render-status" role="status">게임 화면을 불러오는 중…</p>
+        <p id="frame-text" class="screen-reader-only" aria-live="polite"></p>
+      </div>
+      <details class="transcript-details"><summary>전체 대사 텍스트</summary><div class="transcript">${segmentMarkup(entry)}</div></details>
       ${entry.unknownCommands.length ? `<details class="parser-note"><summary>표시에서 생략한 연출 명령 ${entry.unknownCommands.length}종</summary><code>${escapeHtml(entry.unknownCommands.join(", "))}</code></details>` : ""}
     </section>`;
 }
@@ -355,6 +392,57 @@ function segmentMarkup(entry) {
 function renderReaderOnly() {
   const reader = document.querySelector("#conversation-reader");
   if (reader && state.conversation) reader.outerHTML = readerMarkup();
+  paintFrame();
+}
+
+function changeFrame(delta) {
+  const entry = state.conversation?.entries[state.entryIndex];
+  if (!entry) return;
+  const count = splitConversationFrames(entry.script).length;
+  state.frameIndex = Math.max(0, Math.min(count - 1, state.frameIndex + delta));
+  const player = document.querySelector(".game-player");
+  if (!player) return;
+  player.querySelector('[data-action="previous-frame"]').disabled = state.frameIndex === 0;
+  player.querySelector('.playback-controls [data-action="next-frame"]').disabled = state.frameIndex === count - 1;
+  player.querySelector("#frame-position").textContent = `${state.frameIndex + 1} / ${count}`;
+  paintFrame();
+}
+
+async function paintFrame() {
+  const version = ++paintVersion;
+  const canvas = document.querySelector("#game-canvas");
+  const entry = state.conversation?.entries[state.entryIndex];
+  if (!canvas || !entry) return;
+  const gameId = state.gameId;
+  const options = {
+    frameIndex: state.frameIndex,
+    playerName: state.playerName || defaultPlayerName(),
+    playerGender: state.playerGender,
+    nameMap: new Map(Object.entries(currentGame().names)),
+  };
+  try {
+    if (!renderers.has(gameId)) {
+      const renderer = new GameRenderer(gameId);
+      renderers.set(gameId, renderer.initialize().then(() => renderer).catch((error) => {
+        renderers.delete(gameId);
+        throw error;
+      }));
+    }
+    const renderer = await renderers.get(gameId);
+    const buffer = document.createElement("canvas");
+    buffer.width = 400;
+    buffer.height = 240;
+    const result = await renderer.render(entry.script, buffer, options);
+    if (version !== paintVersion || !canvas.isConnected) return;
+    canvas.getContext("2d").drawImage(buffer, 0, 0);
+    document.querySelector("#frame-text").textContent = result.message;
+    document.querySelector("#render-status").textContent = result.diagnostics.length
+      ? "일부 원본 표정·연출 리소스가 없습니다. 전체 대사 텍스트에서도 확인할 수 있습니다."
+      : "";
+  } catch (error) {
+    if (version !== paintVersion) return;
+    document.querySelector("#render-status").textContent = `게임 화면을 불러오지 못했습니다: ${error.message}`;
+  }
 }
 
 function renderCharacterLists(slot) {

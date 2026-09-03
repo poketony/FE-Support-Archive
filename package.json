@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build:data": "node scripts/build-data.mjs --source ../FE13-Messages --output .",
+    "build:data": "node scripts/build-data.mjs --source ../FE13-Messages --feits ../FEITS --output .",
     "serve": "node scripts/serve.mjs",
-    "test": "node test/parser.test.mjs",
+    "test": "node --test test/*.test.mjs",
     "verify": "node scripts/validate-data.mjs --root ."
   },
   "engines": {
