@@ -1,5 +1,13 @@
 let archive = null;
 let scheduled = false;
+let initializedConversationId = "";
+
+const SUPPORT_RANK_ORDER = new Map([
+  ["C", 0], ["Ｃ", 0],
+  ["B", 1], ["Ｂ", 1],
+  ["A", 2], ["Ａ", 2],
+  ["S", 3], ["Ｓ", 3],
+]);
 
 boot();
 
@@ -75,24 +83,32 @@ function applyGenderUi() {
 
   document.querySelectorAll('.character-card[data-action="choose-first"]').forEach((card) => {
     const id = card.dataset.character || "";
-    card.hidden = !validIds.has(id);
+    const allowed = validIds.has(id);
+    card.hidden = !allowed;
+    card.toggleAttribute("aria-hidden", !allowed);
     updatePartnerCount(card, id, conversations);
   });
 
   const firstPartners = firstId ? partnersFor(firstId, conversations) : new Set();
   document.querySelectorAll('.character-card[data-action="choose-second"]').forEach((card) => {
     const id = card.dataset.character || "";
-    card.hidden = !firstPartners.has(id);
+    const allowed = firstPartners.has(id);
+    card.hidden = !allowed;
+    card.toggleAttribute("aria-hidden", !allowed);
     updatePartnerCount(card, id, conversations);
   });
 
   const validConversationIds = new Set(conversations.map((conversation) => conversation.id));
   document.querySelectorAll(".conversation-card[data-conversation]").forEach((card) => {
-    card.hidden = !validConversationIds.has(card.dataset.conversation || "");
+    const allowed = validConversationIds.has(card.dataset.conversation || "");
+    card.hidden = !allowed;
+    card.toggleAttribute("aria-hidden", !allowed);
   });
 
   applyPlayerPortraits(mode, parts, offset);
   filterGlobalSearchResults();
+  applySupportRankOrder();
+  ensureInitialSupportRank(context);
 
   // A gender switch can invalidate an already-open conversation. Keep the pair when possible.
   if (firstId || secondId) repairRouteForGender();
@@ -204,4 +220,46 @@ function filterGlobalSearchResults() {
   const status = document.querySelector("#global-search-status");
   const next = `${visible.toLocaleString("ko-KR")}건을 표시합니다. · ${gender === "male" ? "남성" : "여성"} 주인공 기준`;
   if (status && records.length && status.textContent !== next) status.textContent = next;
+}
+
+function supportRank(label) {
+  return SUPPORT_RANK_ORDER.get(String(label || "").trim().toUpperCase());
+}
+
+function applySupportRankOrder() {
+  document.querySelectorAll(".rank-tabs").forEach((container) => {
+    const tabs = [...container.querySelectorAll(".rank-tab")];
+    if (tabs.length < 2 || !tabs.every((tab) => supportRank(tab.textContent) !== undefined)) return;
+    tabs
+      .sort((left, right) => supportRank(left.textContent) - supportRank(right.textContent))
+      .forEach((tab) => container.appendChild(tab));
+  });
+
+  document.querySelectorAll(".conversation-card em").forEach((label) => {
+    const parts = label.textContent.split("·").map((item) => item.trim()).filter(Boolean);
+    if (parts.length < 2 || !parts.every((item) => supportRank(item) !== undefined)) return;
+    const ordered = [...parts].sort((left, right) => supportRank(left) - supportRank(right));
+    const next = ordered.join(" · ");
+    if (label.textContent !== next) label.textContent = next;
+  });
+}
+
+function ensureInitialSupportRank(context) {
+  const conversationId = context.parts[context.offset + 2] || "";
+  if (!conversationId) {
+    initializedConversationId = "";
+    return;
+  }
+  if (initializedConversationId === conversationId) return;
+
+  const tabs = [...document.querySelectorAll(".rank-tabs .rank-tab")];
+  if (!tabs.length || !tabs.every((tab) => supportRank(tab.textContent) !== undefined)) return;
+  const cTab = tabs.find((tab) => supportRank(tab.textContent) === 0);
+  if (!cTab) {
+    initializedConversationId = conversationId;
+    return;
+  }
+
+  initializedConversationId = conversationId;
+  if (!cTab.classList.contains("is-active")) cTab.click();
 }
