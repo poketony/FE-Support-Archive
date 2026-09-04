@@ -205,17 +205,19 @@ async function rebuildCharacters(game, mode) {
 async function buildPlayerPortraits(gameId) {
   const specs = gameId === "awakening"
     ? {
-        male: "マイユニ_青年_顔立ちA",
-        female: "マイユニ_少女_顔立ちA",
+        male: { face: "マイユニ_青年_顔立ちA", hair: "マイユニ_青年_顔立ちA" },
+        female: { face: "マイユニ_少女_顔立ちA", hair: "マイユニ_少女_顔立ちA" },
       }
     : {
-        male: "PlayerAvatar",
-        female: "PlayerAvatar_f",
+        // FEITS FID maps the default face-A aliases to a-prefixed face IDs,
+        // while the hair atlas uses the unprefixed Avatar base IDs.
+        male: { face: "aマイユニ男1", hair: "マイユニ男1" },
+        female: { face: "aマイユニ女1", hair: "マイユニ女1" },
       };
   const result = {};
-  for (const [gender, assetId] of Object.entries(specs)) {
-    const face = path.join(root, "assets", "renderers", gameId, "img", "face", `${assetId}_bu_通常.png`);
-    const hair = path.join(root, "assets", "renderers", gameId, "img", "hair", `${assetId}_bu_髪0.png`);
+  for (const [gender, assets] of Object.entries(specs)) {
+    const face = path.join(root, "assets", "renderers", gameId, "img", "face", `${assets.face}_bu_通常.png`);
+    const hair = path.join(root, "assets", "renderers", gameId, "img", "hair", `${assets.hair}_bu_髪0.png`);
     if (!(await isFile(face))) continue;
     const outputBase = path.join(root, "assets", "portraits", `${gameId}-player-${gender}`);
     await mkdir(path.dirname(outputBase), { recursive: true });
