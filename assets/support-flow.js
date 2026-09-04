@@ -55,6 +55,24 @@ function setAriaLabel(element, value) {
   }
 }
 
+function normalizeLandingBoxArt() {
+  const awakening = document.querySelector('.game-card[data-game="awakening"] .game-box-art');
+  const fates = document.querySelector('.game-card[data-game="fates"] .game-box-art');
+  if (!awakening || !fates) return;
+
+  for (const attribute of ["width", "height", "loading", "decoding", "fetchpriority"]) {
+    if (fates.hasAttribute(attribute)) awakening.setAttribute(attribute, fates.getAttribute(attribute));
+    else awakening.removeAttribute(attribute);
+  }
+
+  if (awakening.dataset.renderSync !== "1") {
+    const source = new URL(awakening.getAttribute("src"), location.href);
+    source.searchParams.set("box-art-rev", "20260904-1");
+    awakening.setAttribute("src", source.href);
+    awakening.dataset.renderSync = "1";
+  }
+}
+
 function syncPlaybackControls() {
   const boundary = boundaryState();
   if (!boundary) return;
@@ -92,6 +110,7 @@ function scheduleSync() {
   scheduled = true;
   requestAnimationFrame(() => {
     scheduled = false;
+    normalizeLandingBoxArt();
     syncPlaybackControls();
   });
 }
