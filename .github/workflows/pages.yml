@@ -84,6 +84,9 @@ jobs:
           cp site/assets/player-gender.js site/dist/assets/player-gender.js
           cp site/assets/renderer-accelerator.js site/dist/assets/renderer-accelerator.js
 
+      - name: Validate site shell references
+        run: node site/scripts/validate-site-shell.mjs --root site/dist
+
       - name: Validate generated archive
         run: |
           node site/scripts/validate-data.mjs --root site/dist
