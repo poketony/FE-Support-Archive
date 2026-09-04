@@ -22,18 +22,31 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: site
+          fetch-depth: 1
 
       - name: Check out Korean message source
         uses: actions/checkout@v4
         with:
           repository: poketony/FE-Awakening
           path: source/fe-awakening
+          fetch-depth: 1
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /Awakening/Messages (K)/
+            /Awakening/DLC Message (K)/22. 인연의 여름.txt
+            /Awakening/DLC Message (K)/23. 인연의 비밀 온천.txt
+            /Awakening/DLC Message (K)/24. 인연의 수확제.txt
+            /Awakening/Awakening-Live-Renderer/assets/awakening/
+            /if/파이어 엠블렘 if 대사집 (K)/
+            /if/인연의 백야제.txt
+            /if/인연의 암야제.txt
 
       - name: Check out FEITS renderer resources
         uses: actions/checkout@v4
         with:
           repository: SciresM/FEITS
           path: source/feits
+          fetch-depth: 1
           sparse-checkout: FEFTS/Resources
           sparse-checkout-cone-mode: true
 
