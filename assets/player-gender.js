@@ -230,9 +230,9 @@ function applySupportRankOrder() {
   document.querySelectorAll(".rank-tabs").forEach((container) => {
     const tabs = [...container.querySelectorAll(".rank-tab")];
     if (tabs.length < 2 || !tabs.every((tab) => supportRank(tab.textContent) !== undefined)) return;
-    tabs
-      .sort((left, right) => supportRank(left.textContent) - supportRank(right.textContent))
-      .forEach((tab) => container.appendChild(tab));
+    const ordered = [...tabs].sort((left, right) => supportRank(left.textContent) - supportRank(right.textContent));
+    const alreadyOrdered = tabs.every((tab, index) => tab === ordered[index]);
+    if (!alreadyOrdered) ordered.forEach((tab) => container.appendChild(tab));
   });
 
   document.querySelectorAll(".conversation-card em").forEach((label) => {
