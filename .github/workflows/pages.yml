@@ -53,13 +53,22 @@ jobs:
           --feits source/feits
           --output site/dist
 
-      - name: Build game-wide search indexes
-        run: node site/scripts/build-search-index.mjs --root site/dist
+      - name: Apply Avatar gender data
+        run: >-
+          node site/scripts/apply-player-gender.mjs
+          --source source/fe-awakening
+          --root site/dist
 
-      - name: Copy search UI assets
+      - name: Build game-wide search indexes
+        run: |
+          node site/scripts/build-search-index.mjs --root site/dist
+          node site/scripts/annotate-search-gender.mjs --root site/dist
+
+      - name: Copy search and Avatar UI assets
         run: |
           cp site/assets/global-search.js site/dist/assets/global-search.js
           cp site/assets/global-search.css site/dist/assets/global-search.css
+          cp site/assets/player-gender.js site/dist/assets/player-gender.js
 
       - name: Validate generated archive
         run: |
