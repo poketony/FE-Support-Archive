@@ -76,9 +76,9 @@ body.global-search-active { overflow: hidden; }
    otherwise override the HTML hidden state. Gender filtering relies on hidden. */
 [hidden] { display: none !important; }
 
-/* The base eyebrow style uppercases Latin text. Keep the official lowercase
-   "if" spelling in the Fates game label shown above the archive title. */
-body[data-game="fates"] .archive-intro .eyebrow { text-transform: none; }
+/* Preserve source casing for every eyebrow label. In particular, the official
+   game title is "파이어 엠블렘 if", never "파이어 엠블렘 IF". */
+.eyebrow { text-transform: none; }
 
 /* Keep C/B/A/S summaries in one fixed column so a list of support routes scans
    cleanly instead of shifting horizontally with title length. */
