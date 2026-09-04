@@ -37,7 +37,19 @@ for (const game of index.games) {
         const reverse = mode.characters.find((item) => item.id === partner)?.partners.includes(character.id);
         if (!reverse) problems.push(`${game.id}/${mode.id}: ${character.id} ↔ ${partner} 연결이 비대칭입니다.`);
       }
-      if (character.portrait) {
+      if (character.id === "プレイヤー") {
+        for (const gender of ["male", "female"]) {
+          const portrait = character.portraits?.[gender];
+          if (!portrait) {
+            problems.push(`${game.id}/${mode.id}: 주인공 ${gender} 초상화 누락`);
+            continue;
+          }
+          portraitCount += 1;
+          if (!(await isFile(path.join(root, portrait.replace(/^\.\//u, ""))))) {
+            problems.push(`${game.id}/${mode.id}: 주인공 ${gender} 초상화 파일 누락 ${portrait}`);
+          }
+        }
+      } else if (character.portrait) {
         portraitCount += 1;
         const assetId = character.id === "ベロア" ? "べロア" : character.id;
         const hairPath = path.join(root, "assets/renderers", game.id, "img/hair", `${assetId}_bu_髪0.png`);
