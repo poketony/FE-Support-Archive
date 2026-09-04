@@ -102,7 +102,8 @@ function updatePartnerCount(card, id, conversations) {
   const label = card.querySelector("small");
   if (!label) return;
   const count = partnersFor(id, conversations).size;
-  label.textContent = `${count}명과 회화`;
+  const next = `${count}명과 회화`;
+  if (label.textContent !== next) label.textContent = next;
 }
 
 function partnersFor(id, conversations) {
@@ -159,7 +160,7 @@ function applyPlayerPortraits(mode, parts, offset) {
   const known = new Set([player.portrait, portraits.male, portraits.female].filter(Boolean));
 
   document.querySelectorAll("img.portrait-image").forEach((image) => {
-    if (known.has(image.getAttribute("src"))) image.setAttribute("src", target);
+    if (known.has(image.getAttribute("src")) && image.getAttribute("src") !== target) image.setAttribute("src", target);
   });
 
   document.querySelectorAll('.character-card[data-character="プレイヤー"] .portrait').forEach((portrait) => {
@@ -184,7 +185,7 @@ function ensurePortraitImage(portrait, target) {
     image.loading = "lazy";
     portrait.appendChild(image);
   }
-  image.src = target;
+  if (image.getAttribute("src") !== target) image.setAttribute("src", target);
   image.hidden = false;
 }
 
@@ -201,5 +202,6 @@ function filterGlobalSearchResults() {
     if (allowed) visible += 1;
   });
   const status = document.querySelector("#global-search-status");
-  if (status && records.length) status.textContent = `${visible.toLocaleString("ko-KR")}건을 표시합니다. · ${gender === "male" ? "남성" : "여성"} 주인공 기준`;
+  const next = `${visible.toLocaleString("ko-KR")}건을 표시합니다. · ${gender === "male" ? "남성" : "여성"} 주인공 기준`;
+  if (status && records.length && status.textContent !== next) status.textContent = next;
 }
