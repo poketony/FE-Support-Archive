@@ -6,6 +6,17 @@ const PATCH_FLAG = Symbol.for("fe-support.renderer-accelerator");
 const MAX_CACHED_FRAMES = 20;
 const MAX_TIMELINES = 4;
 const rendererStates = new WeakMap();
+const warmedGames = new Set();
+const warmingGames = new Map();
+const COMMON_BINARY_ASSETS = ["bin/chars.bin", "bin/faces.bin", "txt/FID.txt"];
+const COMMON_IMAGE_ASSETS = [
+  "img/Awakening_0.png",
+  "img/Awakening_1.png",
+  "img/SupportBG.png",
+  "img/TextBox.png",
+  "img/NameBox.png",
+  "img/KeyPress.png",
+];
 
 function stateFor(renderer) {
   if (!rendererStates.has(renderer)) {
@@ -84,6 +95,54 @@ function scheduleIdle(task) {
   } else {
     window.setTimeout(task, 80);
   }
+}
+
+function currentGameId() {
+  const value = document.body?.dataset.game || location.hash.replace(/^#\/?/u, "").split("/")[0] || "";
+  return value === "awakening" || value === "fates" ? value : "";
+}
+
+function preloadImage(url) {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => resolve(true);
+    image.onerror = () => resolve(false);
+    image.decoding = "async";
+    image.src = url.href;
+  });
+}
+
+function warmCommonAssets(gameId) {
+  if (!gameId || warmedGames.has(gameId)) return Promise.resolve();
+  if (warmingGames.has(gameId)) return warmingGames.get(gameId);
+
+  const base = new URL(`./assets/renderers/${gameId}/`, location.href);
+  const promise = Promise.allSettled([
+    ...COMMON_BINARY_ASSETS.map((relative) => fetch(new URL(relative, base)).then((response) => {
+      if (!response.ok) throw new Error(`${relative}: ${response.status}`);
+      return response.arrayBuffer();
+    })),
+    ...COMMON_IMAGE_ASSETS.map((relative) => preloadImage(new URL(relative, base))),
+  ]).then(() => {
+    warmedGames.add(gameId);
+  }).finally(() => {
+    warmingGames.delete(gameId);
+  });
+
+  warmingGames.set(gameId, promise);
+  return promise;
+}
+
+let warmupScheduled = false;
+function scheduleCommonWarmup() {
+  if (warmupScheduled || document.visibilityState === "hidden") return;
+  const gameId = currentGameId();
+  if (!gameId || warmedGames.has(gameId) || !document.querySelector(".conversation-card")) return;
+  warmupScheduled = true;
+  scheduleIdle(() => {
+    warmupScheduled = false;
+    warmCommonAssets(gameId).catch(() => {});
+  });
 }
 
 function timelineFor(renderer, cacheState, value, options) {
@@ -233,3 +292,18 @@ if (!GameRenderer.prototype[PATCH_FLAG]) {
     writable: false,
   });
 }
+
+document.addEventListener("pointerover", (event) => {
+  if (!event.target.closest?.(".conversation-card")) return;
+  warmCommonAssets(currentGameId()).catch(() => {});
+}, { passive: true });
+
+document.addEventListener("pointerdown", (event) => {
+  if (!event.target.closest?.(".conversation-card")) return;
+  warmCommonAssets(currentGameId()).catch(() => {});
+}, { passive: true });
+
+const warmupObserver = new MutationObserver(scheduleCommonWarmup);
+warmupObserver.observe(document.documentElement, { childList: true, subtree: true });
+window.addEventListener("hashchange", scheduleCommonWarmup);
+scheduleCommonWarmup();
