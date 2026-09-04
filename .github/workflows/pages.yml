@@ -77,11 +77,12 @@ jobs:
           node site/scripts/build-search-index.mjs --root site/dist
           node site/scripts/annotate-search-gender.mjs --root site/dist
 
-      - name: Copy search and Avatar UI assets
+      - name: Copy search, Avatar, and simulator UI assets
         run: |
           cp site/assets/global-search.js site/dist/assets/global-search.js
           cp site/assets/global-search.css site/dist/assets/global-search.css
           cp site/assets/player-gender.js site/dist/assets/player-gender.js
+          cp site/assets/renderer-accelerator.js site/dist/assets/renderer-accelerator.js
 
       - name: Validate generated archive
         run: |
