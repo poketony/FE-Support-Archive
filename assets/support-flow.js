@@ -42,17 +42,40 @@ function boundaryState() {
   };
 }
 
-function syncNextButton() {
+function setText(element, value) {
+  if (element && element.textContent !== value) element.textContent = value;
+}
+
+function setAriaLabel(element, value) {
+  if (!element) return;
+  if (value) {
+    if (element.getAttribute("aria-label") !== value) element.setAttribute("aria-label", value);
+  } else if (element.hasAttribute("aria-label")) {
+    element.removeAttribute("aria-label");
+  }
+}
+
+function syncPlaybackControls() {
   const boundary = boundaryState();
   if (!boundary) return;
-  const button = document.querySelector('.playback-controls [data-action="next-frame"]');
-  if (!button) return;
-  button.disabled = boundary.atLastFrame && !boundary.next;
+
+  const nextButton = document.querySelector('.playback-controls [data-action="next-frame"]');
+  const screenButton = document.querySelector('.game-screen[data-action="next-frame"]');
+  if (!nextButton) return;
+
   if (boundary.atLastFrame && boundary.next) {
-    button.setAttribute("aria-label", `${boundary.next.textContent.trim()} 회화로 이동`);
-  } else {
-    button.removeAttribute("aria-label");
+    const nextLabel = boundary.next.textContent.trim();
+    nextButton.disabled = false;
+    setText(nextButton, `${nextLabel} 회화로 →`);
+    setAriaLabel(nextButton, `${nextLabel} 회화로 이동`);
+    setAriaLabel(screenButton, `${nextLabel} 회화로 이동`);
+    return;
   }
+
+  nextButton.disabled = boundary.atLastFrame;
+  setText(nextButton, "다음 →");
+  setAriaLabel(nextButton, null);
+  setAriaLabel(screenButton, "다음 대사 (좌우 방향키로 이동)");
 }
 
 function advanceRankIfNeeded(event) {
@@ -69,7 +92,7 @@ function scheduleSync() {
   scheduled = true;
   requestAnimationFrame(() => {
     scheduled = false;
-    syncNextButton();
+    syncPlaybackControls();
   });
 }
 
