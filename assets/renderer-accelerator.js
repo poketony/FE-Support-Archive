@@ -1,7 +1,10 @@
-import { GameRenderer } from "./game-renderer.js";
+import { GameRenderer, createState } from "./game-renderer.js";
+import { splitConversationFrames } from "./renderer-format.js";
+import { visibleText } from "./display.js";
 
 const PATCH_FLAG = Symbol.for("fe-support.renderer-accelerator");
 const MAX_CACHED_FRAMES = 20;
+const MAX_TIMELINES = 4;
 const rendererStates = new WeakMap();
 
 function stateFor(renderer) {
@@ -9,6 +12,7 @@ function stateFor(renderer) {
     rendererStates.set(renderer, {
       cache: new Map(),
       pending: new Map(),
+      timelines: new Map(),
       lastScript: null,
       lastScriptToken: "",
       scheduled: new Set(),
@@ -36,10 +40,22 @@ function scriptToken(cacheState, value) {
   return cacheState.lastScriptToken;
 }
 
+function profileKey(options) {
+  return `${options.playerName || ""}\u001f${options.playerGender || ""}`;
+}
+
 function frameKey(cacheState, value, options, width, height) {
-  const profile = `${options.playerName || ""}\u001f${options.playerGender || ""}`;
   const frameIndex = Number.isFinite(options.frameIndex) ? options.frameIndex : 0;
-  return `${scriptToken(cacheState, value)}\u001f${profile}\u001f${width}x${height}\u001f${frameIndex}`;
+  return `${scriptToken(cacheState, value)}\u001f${profileKey(options)}\u001f${width}x${height}\u001f${frameIndex}`;
+}
+
+function cloneRenderState(state) {
+  return {
+    ...state,
+    charA: { ...state.charA },
+    charB: { ...state.charB },
+    unknownCodes: new Set(state.unknownCodes),
+  };
 }
 
 function touch(cacheState, key, snapshot) {
@@ -70,8 +86,91 @@ function scheduleIdle(task) {
   }
 }
 
+function timelineFor(renderer, cacheState, value, options) {
+  const playerName = options.playerName || (renderer.gameId === "awakening" ? "러플레" : "카무이");
+  const playerGender = options.playerGender === "male" ? "male" : "female";
+  const key = `${scriptToken(cacheState, value)}\u001f${playerName}\u001f${playerGender}`;
+  const cached = cacheState.timelines.get(key);
+  if (cached?.value === value) {
+    cacheState.timelines.delete(key);
+    cacheState.timelines.set(key, cached);
+    return cached;
+  }
+
+  const timeline = {
+    value,
+    frames: splitConversationFrames(value),
+    states: [],
+    messages: [],
+    workingState: createState(playerName, playerGender),
+    builtThrough: -1,
+  };
+  cacheState.timelines.set(key, timeline);
+  while (cacheState.timelines.size > MAX_TIMELINES) {
+    const oldestKey = cacheState.timelines.keys().next().value;
+    cacheState.timelines.delete(oldestKey);
+  }
+  return timeline;
+}
+
+function prepareFrameState(renderer, cacheState, value, options) {
+  const timeline = timelineFor(renderer, cacheState, value, options);
+  const frameIndex = Math.max(0, Math.min(options.frameIndex ?? 0, timeline.frames.length - 1));
+
+  for (let index = timeline.builtThrough + 1; index <= frameIndex; index += 1) {
+    const visibleMessage = renderer.parseFrame(timeline.frames[index], timeline.workingState);
+    if (timeline.workingState.type === 0) {
+      if (timeline.workingState.active === "A") timeline.workingState.topMessage = visibleMessage;
+      else timeline.workingState.bottomMessage = visibleMessage;
+    }
+    timeline.messages[index] = visibleMessage;
+    timeline.states[index] = cloneRenderState(timeline.workingState);
+    timeline.builtThrough = index;
+  }
+
+  return {
+    frameCount: timeline.frames.length,
+    frameIndex,
+    state: cloneRenderState(timeline.states[frameIndex]),
+    visibleMessage: timeline.messages[frameIndex] || "",
+  };
+}
+
 if (!GameRenderer.prototype[PATCH_FLAG]) {
   const originalRender = GameRenderer.prototype.render;
+
+  async function timelineRender(renderer, value, canvas, options = {}) {
+    const context = canvas.getContext("2d");
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    if (!renderer.ready || !value) return { frameCount: value ? 1 : 0, diagnostics: [] };
+
+    const cacheState = stateFor(renderer);
+    const prepared = prepareFrameState(renderer, cacheState, value, options);
+    const { frameCount, frameIndex, state, visibleMessage } = prepared;
+    const missing = new Set();
+    const nameMap = options.nameMap ?? new Map();
+
+    await renderer.drawBackground(context);
+    if (state.type === 0) {
+      await renderer.drawTypeZero(context, state, nameMap, missing, frameIndex < frameCount - 1);
+    } else {
+      await renderer.drawTypeOne(context, state, visibleMessage, nameMap, missing, frameIndex < frameCount - 1);
+    }
+
+    const diagnostics = [
+      ...[...missing].map((item) => ({ type: "asset", message: `누락 에셋(투명 처리): ${item}` })),
+      ...[...state.unknownCodes].map((item) => ({ type: "code", message: `알 수 없는 제어코드(무시): ${item}` })),
+    ];
+    return { frameCount, frameIndex, diagnostics, type: state.type, message: visibleText(visibleMessage) };
+  }
+
+  async function optimizedRender(renderer, value, canvas, options) {
+    try {
+      return await timelineRender(renderer, value, canvas, options);
+    } catch {
+      return originalRender.call(renderer, value, canvas, options);
+    }
+  }
 
   async function ensureSnapshot(renderer, value, options, width, height) {
     const cacheState = stateFor(renderer);
@@ -87,7 +186,7 @@ if (!GameRenderer.prototype[PATCH_FLAG]) {
       const buffer = document.createElement("canvas");
       buffer.width = width;
       buffer.height = height;
-      const result = await originalRender.call(renderer, value, buffer, options);
+      const result = await optimizedRender(renderer, value, buffer, options);
       const snapshot = { canvas: buffer, result };
       store(cacheState, key, snapshot);
       return snapshot;
