@@ -71,6 +71,34 @@ body[data-game="fates"] .global-search-open { background: rgba(16, 16, 20, .9); 
 .global-search-result p { margin: .28rem 0 0; color: #dce5ef; font-size: .88rem; line-height: 1.55; }
 .global-search-empty { padding: 2.5rem 1rem; color: var(--muted, #aab5c6); text-align: center; }
 body.global-search-active { overflow: hidden; }
+
+/* The base archive stylesheet gives cards an explicit display value, which can
+   otherwise override the HTML hidden state. Gender filtering relies on hidden. */
+[hidden] { display: none !important; }
+
+/* Keep C/B/A/S summaries in one fixed column so a list of support routes scans
+   cleanly instead of shifting horizontally with title length. */
+@media (min-width: 681px) {
+  .conversation-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 10rem 1.5rem;
+    align-items: center;
+    column-gap: 1rem;
+  }
+  .conversation-card > em {
+    justify-self: center;
+    min-width: 9rem;
+    margin-left: 0;
+    text-align: center;
+    white-space: nowrap;
+    letter-spacing: .06em;
+  }
+  .conversation-card > .card-arrow {
+    justify-self: end;
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 700px) {
   .global-search-open { padding: .45rem .58rem; font-size: .76rem; }
   .global-search-dialog { width: 100%; max-height: 100vh; height: 100vh; margin: 0; border-width: 0; }
