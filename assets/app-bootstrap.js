@@ -1,2 +1,2 @@
 import "./renderer-accelerator.js";
-await import("./app.js");
+import "./app.js";
