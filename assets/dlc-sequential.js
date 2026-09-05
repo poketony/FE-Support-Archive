@@ -133,15 +133,21 @@ function sequentialListMarkup(context) {
     if (!first || !second) return "";
     const active = conversation.id === context.conversationId;
     const detail = conversation.entryLabels?.length ? conversation.entryLabels.join(" · ") : conversation.relationship || "특별 회화";
+    const relationship = conversation.relationship && conversation.relationship !== "일반"
+      ? `<small class="dlc-sequential-relationship">[${escapeHtml(conversation.relationship)}]</small>`
+      : "";
     return `
       <button type="button" class="dlc-sequential-card ${active ? "is-active" : ""}" data-dlc-conversation="${escapeHtml(conversation.id)}">
         <span class="dlc-sequential-number">${String(index + 1).padStart(2, "0")}</span>
-        <span class="dlc-sequential-person">
+        <span class="dlc-sequential-person dlc-sequential-person--first">
           ${portraitMarkup(first)}
           <strong>${escapeHtml(first.name)}</strong>
         </span>
-        <span class="dlc-sequential-cross" aria-hidden="true">×</span>
-        <span class="dlc-sequential-person">
+        <span class="dlc-sequential-relation">
+          <span class="dlc-sequential-cross" aria-hidden="true">×</span>
+          ${relationship}
+        </span>
+        <span class="dlc-sequential-person dlc-sequential-person--second">
           ${portraitMarkup(second)}
           <strong>${escapeHtml(second.name)}</strong>
         </span>
