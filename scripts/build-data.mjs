@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { composePortraitSvg } from "./lib/portrait.mjs";
 import { NAME_OVERRIDES, characterName } from "../assets/display.js";
+import { hairColorForCharacter } from "../assets/hair-colors.js";
 import {
   canonicalCharacterId,
   extractDlcSupportKey,
@@ -100,6 +101,7 @@ async function copySiteShell() {
     "index.html",
     "assets/app.js",
     "assets/display.js",
+    "assets/hair-colors.js",
     "assets/archive-navigation.js",
     "manifest.webmanifest",
     "assets/icon-192.png",
@@ -262,7 +264,8 @@ async function copyPortrait(config, rawId) {
     const fileName = `${config.id}-${createHash("sha1").update(id).digest("hex").slice(0, 12)}.${hasHair ? "svg" : "png"}`;
     const destination = path.join(outputRoot, "assets", "portraits", fileName);
     if (hasHair) {
-      await writeFile(destination, composePortraitSvg(await readFile(source), await readFile(hairPath)), "utf8");
+      const hairColor = hairColorForCharacter(config.id, assetId);
+      await writeFile(destination, composePortraitSvg(await readFile(source), await readFile(hairPath), hairColor), "utf8");
     } else {
       await copyFile(source, destination);
     }
