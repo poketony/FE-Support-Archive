@@ -15,12 +15,16 @@ test("keeps only the requested player script variants", () => {
   }
 });
 
-test("excludes Father and the old Awakening Lucina without excluding Marth's entry", () => {
+test("excludes Father and old Awakening Lucina only from main support while keeping Marth and DLC Lucina", () => {
   assert.equal(isAllowedArchivePair(["クロム", "父親"], "awakening"), false);
   assert.equal(isAllowedArchivePair(["父親", "アクア"], "fates"), false);
-  assert.equal(isAllowedArchivePair(["ルキナ", "クロム"], "awakening"), false);
+  assert.equal(isAllowedArchivePair(["ルキナ", "クロム"], "awakening"), true);
   assert.equal(isAllowedArchivePair(["マルス", "クロム"], "awakening"), true);
   assert.equal(isAllowedArchivePair(["ルキナ", "アクア"], "fates"), true);
+  assert.equal(extractMainSupportKey("MID_支援_ルキナ_デジェル_Ｃ"), null);
+  assert.deepEqual(extractMainSupportKey("MID_支援_マルス_デジェル_Ｃ")?.characters, ["マルス", "デジェル"]);
+  const dlcNames = new Map([["ルキナ", "루키나"], ["セレナ", "세레나"]]);
+  assert.deepEqual(extractDlcSupportKey("MID_E000_EV_ルキナ_セレナ_01", dlcNames)?.characters, ["ルキナ", "セレナ"]);
   assert.equal(characterName("マルス", { マルス: "루키나" }), "루키나");
 });
 
@@ -68,14 +72,14 @@ test("display names and untranslated text never leak Japanese", () => {
   assert.equal(visibleText("こんにちは"), "아직 번역되지 않은 대사입니다.");
 });
 
-test("Awakening transcript Lucina uses the retained portrait without restoring excluded entries", () => {
+test("Awakening transcript Lucina uses the retained portrait without restoring excluded main entries", () => {
   const characters = [{ id: "マルス", name: "루키나", portrait: "./lucina.png" }];
   const portrait = characters.find((item) => item.id === transcriptCharacterId("ルキナ", "awakening"))?.portrait;
   assert.equal(portrait, "./lucina.png");
   assert.equal(transcriptCharacterId("マルス", "awakening"), "マルス");
   assert.equal(transcriptCharacterId("デジェル", "awakening"), "デジェル");
   assert.equal(transcriptCharacterId("ルキナ", "fates"), "ルキナ");
-  assert.equal(isAllowedArchivePair(["ルキナ", "デジェル"], "awakening"), false);
+  assert.equal(extractMainSupportKey("MID_支援_ルキナ_デジェル_Ｃ"), null);
   assert.equal(isAllowedArchiveSource("デジェル_ルキナ.txt", "awakening"), false);
 });
 
