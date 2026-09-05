@@ -1,6 +1,6 @@
 // Canonical tint colors for portraits whose hair is stored as a separate grayscale layer.
-// Child units use the hair color of their fixed parent so the archive has one stable look.
-// Avatar colors follow the default official artwork rather than the old generic gray tint.
+// Child units normally use the hair color of their fixed parent so the archive has one stable look.
+// A few official-art exceptions are kept explicitly below.
 
 export const DEFAULT_HAIR_COLOR = Object.freeze([0x5b, 0x58, 0x55]);
 
@@ -10,13 +10,13 @@ function rgb(hex) {
 }
 
 const AWAKENING_HAIR_COLORS = new Map([
-  // Robin / Morgan: default official Robin appearance.
+  // Robin: default official Robin appearance. Morgan keeps the archive's original neutral tint.
   ["プレイヤー", rgb("#F6F4EF")],
   ["マイユニ_青年_顔立ちA", rgb("#F6F4EF")],
   ["マイユニ_少女_顔立ちA", rgb("#F6F4EF")],
-  ["マーク", rgb("#F6F4EF")],
-  ["マーク男", rgb("#F6F4EF")],
-  ["マーク女", rgb("#F6F4EF")],
+  ["マーク", DEFAULT_HAIR_COLOR],
+  ["マーク男", DEFAULT_HAIR_COLOR],
+  ["マーク女", DEFAULT_HAIR_COLOR],
 
   // Children -> fixed parent.
   ["ルキナ", rgb("#505C81")], // Chrom
@@ -25,7 +25,7 @@ const AWAKENING_HAIR_COLORS = new Map([
   ["ウード正体不明", rgb("#DAD3BD")],
   ["アズール", rgb("#EBCDD6")], // Olivia
   ["ブレディ", rgb("#F2E7C4")], // Maribelle
-  ["デジェル", rgb("#AA6463")], // Sully
+  ["デジェル", rgb("#595655")], // Kellam
   ["シンシア", rgb("#A19791")], // Sumia
   ["セレナ", rgb("#AF5454")], // Cordelia
   ["ジェローム", rgb("#D48085")], // Cherche
@@ -43,7 +43,7 @@ const FATES_HAIR_COLORS = new Map([
   ["カンナ男", rgb("#FFFFFF")],
   ["カンナ女", rgb("#FFFFFF")],
 
-  // Children -> fixed parent. Parent colors follow FEITS' character color table.
+  // Children -> fixed parent, except official-art color overrides noted below.
   ["シグレ", rgb("#BAE1E1")], // Azura
   ["ディーア", rgb("#D2D2C3")], // Jakob
   ["ゾフィー", rgb("#AAB4B4")], // Silas
@@ -53,17 +53,17 @@ const FATES_HAIR_COLORS = new Map([
   ["グレイ", rgb("#914343")], // Saizo
   ["キヌ", rgb("#D39146")], // Kaden
   ["ヒサメ", rgb("#6F554B")], // Hinata
-  ["ミタマ", rgb("#785F60")], // Azama
+  ["ミタマ", rgb("#FFE3ED")], // Official artwork override
   ["マトイ", rgb("#8A4144")], // Subaki
   ["シャラ", rgb("#8B5A5C")], // Hayato
   ["ジークベルト", rgb("#D0C29F")], // Xander
   ["フォレオ", rgb("#D2C3AA")], // Leo
   ["イグニス", rgb("#F2E3B5")], // Benny
-  ["ベロア", rgb("#F5F3F0")], // Keaton
-  ["べロア", rgb("#F5F3F0")],
+  ["ベロア", rgb("#484848")], // Official artwork override
+  ["べロア", rgb("#484848")],
   ["ルッツ", rgb("#FEEAB7")], // Arthur
   ["オフェリア", rgb("#DAD3BD")], // Odin
-  ["ソレイユ", rgb("#999191")], // Laslow
+  ["ソレイユ", rgb("#EDD2DA")], // Official artwork override
   ["エポニーヌ", rgb("#F5F3F0")], // Niles
 ]);
 
