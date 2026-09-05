@@ -12,6 +12,7 @@ import {
   relationshipLabel,
 } from "./lib/parser.mjs";
 import { characterName } from "../assets/display.js";
+import { hairColorForCharacter } from "../assets/hair-colors.js";
 
 const args = parseArgs(process.argv.slice(2));
 const root = path.resolve(args.root ?? ".");
@@ -215,6 +216,7 @@ async function buildPlayerPortraits(gameId) {
         female: { face: "aマイユニ女1", hair: "マイユニ女1" },
       };
   const result = {};
+  const hairColor = hairColorForCharacter(gameId, "プレイヤー");
   for (const [gender, assets] of Object.entries(specs)) {
     const face = path.join(root, "assets", "renderers", gameId, "img", "face", `${assets.face}_bu_通常.png`);
     const hair = path.join(root, "assets", "renderers", gameId, "img", "hair", `${assets.hair}_bu_髪0.png`);
@@ -223,7 +225,7 @@ async function buildPlayerPortraits(gameId) {
     await mkdir(path.dirname(outputBase), { recursive: true });
     if (await isFile(hair)) {
       const output = `${outputBase}.svg`;
-      await writeFile(output, composePortraitSvg(await readFile(face), await readFile(hair)), "utf8");
+      await writeFile(output, composePortraitSvg(await readFile(face), await readFile(hair), hairColor), "utf8");
       result[gender] = `./assets/portraits/${path.basename(output)}`;
     } else {
       const output = `${outputBase}.png`;
