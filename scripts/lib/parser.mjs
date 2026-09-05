@@ -50,6 +50,9 @@ export function extractMainSupportKey(key, names = new Map()) {
     .filter((part) => part && !["親子", "恋人", "兄弟", "姉妹", "夫婦", "家族", "通常", "一般"].includes(part))
     .map((part) => canonicalCharacterId(part, names));
   if (ids.length < 2 || ids[0] === ids[1]) return null;
+  // Awakening main support keeps the retained マルス entries for Lucina.
+  // The old ルキナ entries are excluded here only; DLC legitimately uses ルキナ.
+  if (ids.includes("ルキナ")) return null;
   return { characters: ids.slice(0, 2), rank: match[2], relationship: relationshipLabel(key) };
 }
 
@@ -92,11 +95,13 @@ export function isAllowedPlayerVariant(key, gameId) {
 }
 
 export function isAllowedArchivePair(characters, gameId) {
-  return !characters.includes("父親") && !(gameId === "awakening" && characters.includes("ルキナ"));
+  return !characters.includes("父親");
 }
 
 export function isAllowedArchiveSource(fileName, gameId) {
-  return isAllowedArchivePair(fileName.replace(/\.txt$/u, "").split("_"), gameId);
+  const characters = fileName.replace(/\.txt$/u, "").split("_");
+  return isAllowedArchivePair(characters, gameId)
+    && !(gameId === "awakening" && characters.includes("ルキナ"));
 }
 
 export function parseScript(script, options = {}) {
@@ -187,7 +192,7 @@ export function parseScript(script, options = {}) {
       index = consumePipes(script, index + twoParameter.length + 1, 2);
       continue;
     }
-    const oneParameter = [...ONE_PARAMETER_COMMANDS].find((command) => script.startsWith(`$${command}`, index));
+    const oneParameter = [...ONE_PARAMETER_COMMANDS].find((command) => script.startsWith(`$${oneParameter}`, index));
     if (oneParameter) {
       index = consumePipes(script, index + oneParameter.length + 1, 1);
       continue;
