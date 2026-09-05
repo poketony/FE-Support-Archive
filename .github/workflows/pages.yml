@@ -84,6 +84,8 @@ jobs:
           cp site/assets/player-gender.js site/dist/assets/player-gender.js
           cp site/assets/renderer-accelerator.js site/dist/assets/renderer-accelerator.js
           cp site/assets/support-flow.js site/dist/assets/support-flow.js
+          cp site/assets/dlc-sequential.js site/dist/assets/dlc-sequential.js
+          cp site/assets/dlc-sequential.css site/dist/assets/dlc-sequential.css
 
       - name: Validate site shell references
         run: node site/scripts/validate-site-shell.mjs --root site/dist
