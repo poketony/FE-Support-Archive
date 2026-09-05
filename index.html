@@ -24,7 +24,93 @@
         }
       }
     </style>
-    <script type="module" src="./assets/renderer-accelerator.js"></script>
+    <script type="module">
+      import { GameRenderer } from "./assets/game-renderer.js";
+      import { hairColorForAssetPath } from "./assets/hair-colors.js?v=20260905-3";
+
+      // Apply the canonical hair-color patch before renderer-accelerator initializes.
+      // The versioned import prevents an older hair-color table from surviving on one device/CDN edge.
+      const HAIR_PATCH_FLAG = Symbol.for("fe-support.canonical-hair-colors");
+      if (!GameRenderer.prototype[HAIR_PATCH_FLAG]) {
+        GameRenderer.prototype.recolorHair = function recolorCanonicalHair(image, cacheKey) {
+          const hairColor = hairColorForAssetPath(this.gameId, cacheKey);
+          const coloredCacheKey = `${cacheKey}|${hairColor.join(",")}`;
+          if (this.recolored.has(coloredCacheKey)) return this.recolored.get(coloredCacheKey);
+
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const context = canvas.getContext("2d", { willReadFrequently: true });
+          context.drawImage(image, 0, 0);
+          const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+          for (let index = 0; index < pixels.data.length; index += 4) {
+            if (!pixels.data[index + 3]) continue;
+            for (let channel = 0; channel < 3; channel += 1) {
+              const source = hairColor[channel] / 255;
+              const destination = pixels.data[index + channel] / 255;
+              const value = destination < .5
+                ? 2 * source * destination
+                : 1 - 2 * (1 - source) * (1 - destination);
+              pixels.data[index + channel] = Math.max(0, Math.min(255, Math.round(value * 255)));
+            }
+          }
+          context.putImageData(pixels, 0, 0);
+          this.recolored.set(coloredCacheKey, canvas);
+          return canvas;
+        };
+        Object.defineProperty(GameRenderer.prototype, HAIR_PATCH_FLAG, {
+          value: true,
+          configurable: false,
+          enumerable: false,
+          writable: false,
+        });
+      }
+
+      // Generated portrait SVG filenames are stable across builds. Attach the current
+      // archive build timestamp so a changed hair tint always receives a new URL.
+      (async () => {
+        let revision = "hair-20260905-3";
+        try {
+          const response = await fetch("./data/index.json", { cache: "no-store" });
+          if (response.ok) {
+            const metadata = await response.json();
+            if (metadata.generatedAt) revision = metadata.generatedAt;
+          }
+        } catch {}
+
+        const refreshPortrait = (image) => {
+          if (!(image instanceof HTMLImageElement)) return;
+          const raw = image.getAttribute("src") || "";
+          if (!raw.includes("assets/portraits/")) return;
+          const url = new URL(raw, location.href);
+          if (url.searchParams.get("build") === revision) return;
+          url.searchParams.set("build", revision);
+          image.src = url.href;
+        };
+
+        const scan = (root) => {
+          if (root instanceof HTMLImageElement) refreshPortrait(root);
+          root.querySelectorAll?.("img.portrait-image").forEach(refreshPortrait);
+        };
+
+        scan(document);
+        const observer = new MutationObserver((records) => {
+          for (const record of records) {
+            if (record.type === "attributes") refreshPortrait(record.target);
+            for (const node of record.addedNodes) {
+              if (node instanceof Element) scan(node);
+            }
+          }
+        });
+        observer.observe(document.documentElement, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["src"],
+        });
+      })();
+    </script>
+    <script type="module" src="./assets/renderer-accelerator.js?v=20260905-3"></script>
     <script type="module" src="./assets/app.js"></script>
     <script type="module" src="./assets/global-search.js"></script>
     <script type="module" src="./assets/player-gender.js"></script>
