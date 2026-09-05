@@ -18,12 +18,12 @@ const AWAKENING_HAIR_COLORS = new Map([
   ["マーク男", DEFAULT_HAIR_COLOR],
   ["マーク女", DEFAULT_HAIR_COLOR],
 
-  // Children -> fixed parent.
+  // Children -> fixed parent, except official-art color overrides noted below.
   ["ルキナ", rgb("#505C81")], // Chrom
   ["マルス", rgb("#505C81")], // Lucina alias -> Chrom
   ["ウード", rgb("#DAD3BD")], // Lissa
   ["ウード正体不明", rgb("#DAD3BD")],
-  ["アズール", rgb("#EBCDD6")], // Olivia
+  ["アズール", rgb("#999191")], // Official artwork override (Inigo / Laslow gray)
   ["ブレディ", rgb("#F2E7C4")], // Maribelle
   ["デジェル", rgb("#595655")], // Kellam
   ["シンシア", rgb("#A19791")], // Sumia
