@@ -1,8 +1,10 @@
 import { GameRenderer, createState } from "./game-renderer.js";
 import { splitConversationFrames } from "./renderer-format.js";
 import { visibleText } from "./display.js";
+import { hairColorForAssetPath } from "./hair-colors.js";
 
 const PATCH_FLAG = Symbol.for("fe-support.renderer-accelerator");
+const HAIR_PATCH_FLAG = Symbol.for("fe-support.canonical-hair-colors");
 const MAX_CACHED_FRAMES = 20;
 const MAX_TIMELINES = 4;
 const rendererStates = new WeakMap();
@@ -17,6 +19,40 @@ const COMMON_IMAGE_ASSETS = [
   "img/NameBox.png",
   "img/KeyPress.png",
 ];
+
+if (!GameRenderer.prototype[HAIR_PATCH_FLAG]) {
+  GameRenderer.prototype.recolorHair = function recolorCanonicalHair(image, cacheKey) {
+    const hairColor = hairColorForAssetPath(this.gameId, cacheKey);
+    const coloredCacheKey = `${cacheKey}|${hairColor.join(",")}`;
+    if (this.recolored.has(coloredCacheKey)) return this.recolored.get(coloredCacheKey);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+    for (let index = 0; index < pixels.data.length; index += 4) {
+      if (!pixels.data[index + 3]) continue;
+      for (let channel = 0; channel < 3; channel += 1) {
+        const source = hairColor[channel] / 255;
+        const destination = pixels.data[index + channel] / 255;
+        const value = destination < .5 ? 2 * source * destination : 1 - 2 * (1 - source) * (1 - destination);
+        pixels.data[index + channel] = Math.max(0, Math.min(255, Math.round(value * 255)));
+      }
+    }
+    context.putImageData(pixels, 0, 0);
+    this.recolored.set(coloredCacheKey, canvas);
+    return canvas;
+  };
+
+  Object.defineProperty(GameRenderer.prototype, HAIR_PATCH_FLAG, {
+    value: true,
+    configurable: false,
+    enumerable: false,
+    writable: false,
+  });
+}
 
 function stateFor(renderer) {
   if (!rendererStates.has(renderer)) {
