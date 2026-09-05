@@ -55,7 +55,7 @@ const FATES_HAIR_COLORS = new Map([
   ["ヒサメ", rgb("#6F554B")], // Hinata
   ["ミタマ", rgb("#FFE3ED")], // Official artwork override
   ["マトイ", rgb("#8A4144")], // Subaki
-  ["シャラ", rgb("#8B5A5C")], // Hayato
+  ["シャラ", rgb("#484848")], // Official artwork override
   ["ジークベルト", rgb("#D0C29F")], // Xander
   ["フォレオ", rgb("#D2C3AA")], // Leo
   ["イグニス", rgb("#F2E3B5")], // Benny
