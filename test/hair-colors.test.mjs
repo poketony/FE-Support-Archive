@@ -8,7 +8,6 @@ import {
 
 test("Awakening children use their fixed parent's hair color", () => {
   assert.deepEqual(hairColorForCharacter("awakening", "ウード"), [0xDA, 0xD3, 0xBD]);
-  assert.deepEqual(hairColorForCharacter("awakening", "アズール"), [0xEB, 0xCD, 0xD6]);
   assert.deepEqual(hairColorForCharacter("awakening", "デジェル"), [0x59, 0x56, 0x55]);
   assert.deepEqual(hairColorForCharacter("awakening", "セレナ"), [0xAF, 0x54, 0x54]);
   assert.deepEqual(hairColorForCharacter("awakening", "ンン"), [0xC2, 0xD6, 0xAE]);
@@ -17,6 +16,7 @@ test("Awakening children use their fixed parent's hair color", () => {
 test("official-art child color exceptions stay explicit", () => {
   assert.deepEqual(hairColorForCharacter("awakening", "マーク男"), DEFAULT_HAIR_COLOR);
   assert.deepEqual(hairColorForCharacter("awakening", "マーク女"), DEFAULT_HAIR_COLOR);
+  assert.deepEqual(hairColorForCharacter("awakening", "アズール"), [0x99, 0x91, 0x91]);
   assert.deepEqual(hairColorForCharacter("fates", "ミタマ"), [0xFF, 0xE3, 0xED]);
   assert.deepEqual(hairColorForCharacter("fates", "シャラ"), [0x48, 0x48, 0x48]);
   assert.deepEqual(hairColorForCharacter("fates", "ベロア"), [0x48, 0x48, 0x48]);
