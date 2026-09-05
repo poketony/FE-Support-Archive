@@ -18,6 +18,7 @@ test("official-art child color exceptions stay explicit", () => {
   assert.deepEqual(hairColorForCharacter("awakening", "マーク男"), DEFAULT_HAIR_COLOR);
   assert.deepEqual(hairColorForCharacter("awakening", "マーク女"), DEFAULT_HAIR_COLOR);
   assert.deepEqual(hairColorForCharacter("fates", "ミタマ"), [0xFF, 0xE3, 0xED]);
+  assert.deepEqual(hairColorForCharacter("fates", "シャラ"), [0x48, 0x48, 0x48]);
   assert.deepEqual(hairColorForCharacter("fates", "ベロア"), [0x48, 0x48, 0x48]);
   assert.deepEqual(hairColorForCharacter("fates", "べロア"), [0x48, 0x48, 0x48]);
   assert.deepEqual(hairColorForCharacter("fates", "ソレイユ"), [0xED, 0xD2, 0xDA]);
@@ -26,7 +27,6 @@ test("official-art child color exceptions stay explicit", () => {
 test("other Fates children use their fixed parent's hair color", () => {
   assert.deepEqual(hairColorForCharacter("fates", "シノノメ"), [0x58, 0x33, 0x2D]);
   assert.deepEqual(hairColorForCharacter("fates", "マトイ"), [0x8A, 0x41, 0x44]);
-  assert.deepEqual(hairColorForCharacter("fates", "シャラ"), [0x8B, 0x5A, 0x5C]);
 });
 
 test("Robin and Corrin use their official default hair colors", () => {
