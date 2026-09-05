@@ -133,8 +133,9 @@ function sequentialListMarkup(context) {
     if (!first || !second) return "";
     const active = conversation.id === context.conversationId;
     const detail = conversation.entryLabels?.length ? conversation.entryLabels.join(" · ") : conversation.relationship || "특별 회화";
-    const relationship = conversation.relationship && conversation.relationship !== "일반"
-      ? `<small class="dlc-sequential-relationship">[${escapeHtml(conversation.relationship)}]</small>`
+    const relationshipTag = conciseRelationship(conversation.relationship);
+    const relationship = relationshipTag
+      ? `<small class="dlc-sequential-relationship">[${escapeHtml(relationshipTag)}]</small>`
       : "";
     return `
       <button type="button" class="dlc-sequential-card ${active ? "is-active" : ""}" data-dlc-conversation="${escapeHtml(conversation.id)}">
@@ -162,6 +163,12 @@ function sequentialListMarkup(context) {
       <p>${context.conversations.length.toLocaleString("ko-KR")}개 회화</p>
     </div>
     <div class="dlc-sequential-list">${cards}</div>`;
+}
+
+function conciseRelationship(relationship) {
+  const value = String(relationship || "").trim();
+  if (!value || value === "일반") return "";
+  return value.split("·", 1)[0].trim();
 }
 
 function portraitMarkup(character) {
