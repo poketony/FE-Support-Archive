@@ -69,7 +69,10 @@ function applyDlcView() {
     switcher.className = "dlc-view-switch-wrap";
     intro.insertAdjacentElement("afterend", switcher);
   }
-  switcher.innerHTML = viewSwitcherMarkup(view);
+  if (switcher.dataset.view !== view) {
+    switcher.dataset.view = view;
+    switcher.innerHTML = viewSwitcherMarkup(view);
+  }
 
   const picker = document.querySelector(".picker");
   const results = document.querySelector(".results-panel");
