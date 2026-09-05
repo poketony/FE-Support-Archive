@@ -143,6 +143,7 @@
   align-content: center;
   gap: .12rem;
   min-width: 0;
+  overflow: visible;
   text-align: center;
 }
 
@@ -212,7 +213,7 @@ body[data-game="fates"] .dlc-view-switch {
   }
 
   .dlc-sequential-card {
-    grid-template-columns: 2rem minmax(0, 1fr) 1.3rem minmax(0, 1fr) 1.5rem;
+    grid-template-columns: 2rem minmax(0, 1fr) 2.5rem minmax(0, 1fr) 1.5rem;
     gap: .45rem;
     min-height: 4.65rem;
     padding: .55rem .5rem;
@@ -263,7 +264,7 @@ body[data-game="fates"] .dlc-view-switch {
   }
 
   .dlc-sequential-card {
-    grid-template-columns: 1.55rem minmax(0, 1fr) 1rem minmax(0, 1fr) 1.2rem;
+    grid-template-columns: 1.55rem minmax(0, 1fr) 2.15rem minmax(0, 1fr) 1.2rem;
     gap: .3rem;
   }
 
