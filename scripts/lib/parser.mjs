@@ -192,7 +192,7 @@ export function parseScript(script, options = {}) {
       index = consumePipes(script, index + twoParameter.length + 1, 2);
       continue;
     }
-    const oneParameter = [...ONE_PARAMETER_COMMANDS].find((command) => script.startsWith(`$${oneParameter}`, index));
+    const oneParameter = [...ONE_PARAMETER_COMMANDS].find((command) => script.startsWith(`$${command}`, index));
     if (oneParameter) {
       index = consumePipes(script, index + oneParameter.length + 1, 1);
       continue;
