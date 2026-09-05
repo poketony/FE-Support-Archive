@@ -1,0 +1,252 @@
+.dlc-view-switch-wrap {
+  width: min(82rem, calc(100% - 2rem));
+  margin: -.55rem auto 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.dlc-view-switch {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(8.5rem, 1fr));
+  gap: .25rem;
+  padding: .28rem;
+  border: 1px solid var(--line);
+  background: var(--panel-deep);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .2);
+}
+
+.dlc-view-switch button {
+  min-height: 2.75rem;
+  padding: .55rem .9rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.dlc-view-switch button span {
+  display: inline-block;
+  min-width: 1.1rem;
+  margin-right: .2rem;
+  color: var(--gold);
+}
+
+.dlc-view-switch button:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, .055);
+}
+
+.dlc-view-switch button.is-active {
+  border-color: var(--gold);
+  background: rgba(208, 180, 119, .12);
+  color: var(--ink);
+}
+
+.dlc-sequential-panel {
+  width: min(82rem, calc(100% - 2rem));
+  margin: 0 auto 1.4rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  background: var(--panel-deep);
+  box-shadow: var(--shadow);
+}
+
+.dlc-sequential-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dlc-sequential-heading .eyebrow {
+  margin-top: 0;
+}
+
+.dlc-sequential-heading h2 {
+  margin: 0;
+  font-family: Cambria, "Noto Serif KR", serif;
+  font-size: 1.55rem;
+}
+
+.dlc-sequential-heading > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.dlc-sequential-list {
+  display: grid;
+  gap: .55rem;
+}
+
+.dlc-sequential-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(9.5rem, .85fr) 2rem minmax(9.5rem, .85fr) minmax(7rem, .5fr) 2rem;
+  align-items: center;
+  gap: .8rem;
+  min-height: 5.25rem;
+  width: 100%;
+  padding: .65rem .85rem;
+  border: 1px solid var(--line);
+  background: linear-gradient(100deg, rgba(31, 52, 81, .92), rgba(8, 20, 39, .96));
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  transition: transform .16s ease, border-color .16s ease, filter .16s ease;
+}
+
+.dlc-sequential-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  filter: brightness(1.07);
+}
+
+.dlc-sequential-card.is-active {
+  border-color: var(--gold);
+  box-shadow: inset 3px 0 var(--gold);
+}
+
+.dlc-sequential-number {
+  color: var(--gold);
+  font-family: Cambria, Georgia, serif;
+  font-size: .9rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.dlc-sequential-person {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  min-width: 0;
+}
+
+.dlc-sequential-person .portrait {
+  flex: 0 0 auto;
+  width: 3.45rem;
+}
+
+.dlc-sequential-person strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dlc-sequential-cross {
+  color: var(--gold);
+  font-family: Cambria, Georgia, serif;
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.dlc-sequential-card small {
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: right;
+}
+
+.dlc-sequential-arrow {
+  color: var(--accent);
+  font-size: 1.25rem;
+  text-align: center;
+}
+
+.dlc-sequential-empty {
+  margin: 0;
+  padding: 2rem 1rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+body[data-game="fates"] .dlc-sequential-card {
+  background: #25242a;
+}
+
+body[data-game="fates"] .dlc-view-switch {
+  background: #1c1b20;
+}
+
+@media (max-width: 760px) {
+  .dlc-view-switch-wrap {
+    justify-content: stretch;
+  }
+
+  .dlc-view-switch {
+    width: 100%;
+  }
+
+  .dlc-sequential-panel {
+    padding: .8rem;
+  }
+
+  .dlc-sequential-card {
+    grid-template-columns: 2rem minmax(0, 1fr) 1.3rem minmax(0, 1fr) 1.5rem;
+    gap: .45rem;
+    min-height: 4.65rem;
+    padding: .55rem .5rem;
+  }
+
+  .dlc-sequential-person {
+    gap: .45rem;
+  }
+
+  .dlc-sequential-person .portrait {
+    width: 2.8rem;
+  }
+
+  .dlc-sequential-person strong {
+    font-size: .88rem;
+  }
+
+  .dlc-sequential-card small {
+    display: none;
+  }
+
+  .dlc-sequential-number {
+    font-size: .74rem;
+  }
+
+  .dlc-sequential-cross {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 430px) {
+  .dlc-view-switch {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dlc-view-switch button {
+    padding-inline: .55rem;
+    font-size: .88rem;
+  }
+
+  .dlc-sequential-heading {
+    align-items: start;
+  }
+
+  .dlc-sequential-card {
+    grid-template-columns: 1.55rem minmax(0, 1fr) 1rem minmax(0, 1fr) 1.2rem;
+    gap: .3rem;
+  }
+
+  .dlc-sequential-person {
+    flex-direction: column;
+    gap: .15rem;
+    text-align: center;
+  }
+
+  .dlc-sequential-person .portrait {
+    width: 2.65rem;
+  }
+
+  .dlc-sequential-person strong {
+    width: 100%;
+    font-size: .79rem;
+  }
+}
